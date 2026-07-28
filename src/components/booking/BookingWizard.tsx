@@ -27,7 +27,13 @@ function StepShell({
   );
 }
 
-export function BookingWizard({ initialOverrides }: { initialOverrides?: import('@/booking').BookingState }) {
+export function BookingWizard({ 
+  initialOverrides,
+  onBookingComplete
+}: { 
+  initialOverrides?: import('@/booking').BookingState;
+  onBookingComplete?: (details: any) => void;
+}) {
   const wizard = useBooking(initialOverrides);
   const { state } = wizard;
   const { t } = useLang();
@@ -50,7 +56,11 @@ export function BookingWizard({ initialOverrides }: { initialOverrides?: import(
 
   const handleConfirm = () => {
     const reference = wizard.confirm();
-    openExternal(waLink(bookingMessage({ ...state, reference })));
+    if (onBookingComplete) {
+      onBookingComplete({ ...state, reference });
+    } else {
+      openExternal(waLink(bookingMessage({ ...state, reference })));
+    }
   };
 
   const verifyNextLabel =

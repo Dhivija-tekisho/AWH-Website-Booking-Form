@@ -95,6 +95,18 @@ function App() {
   const { t: i18nT } = useLang();
   const t = translations[language];
 
+  const chatBodyRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages or flowStep changes
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 50);
+    }
+  }, [messages, flowStep, bookingView.active]);
+
   // Initialize first message based on language
   useEffect(() => {
     if (messages.length === 0) {
@@ -184,6 +196,24 @@ function App() {
     setFlowStep('asking_name');
   };
 
+  const handleBookingComplete = (details: any) => {
+    setBookingView({ active: false });
+    setFlowStep('idle');
+    
+    const formattedDate = details.date ? new Date(details.date).toLocaleDateString() : '';
+    
+    addMessage('bot', (
+      <>
+        <strong>Booking Confirmed! 🎉</strong><br /><br />
+        <strong>Reference:</strong> {details.reference}<br />
+        <strong>Date:</strong> {formattedDate}<br />
+        <strong>Time:</strong> {details.slot}<br />
+        <strong>Doctor:</strong> {details.doctor?.name}<br /><br />
+        Thank you for booking with Advanced Wound Healing Clinics. If you have any other questions, feel free to ask!
+      </>
+    ));
+  };
+
   if (bookingView.active) {
     return (
       <main className="mx-auto flex h-dvh max-w-3xl flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
@@ -205,7 +235,8 @@ function App() {
               patientType: bookingView.patientType as any, 
               name: bookingView.name,
               step: 2 
-            }} 
+            }}
+            onBookingComplete={handleBookingComplete}
           />
         </div>
       </main>
@@ -278,7 +309,7 @@ function App() {
         </div>
 
         {/* Body */}
-        <div className="chat-body chat-scroll">
+        <div className="chat-body chat-scroll" ref={chatBodyRef}>
           <div className="chat-messages">
             {messages.map((msg) => (
               <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'user-message' : ''}`}>
@@ -314,6 +345,9 @@ function App() {
               </div>
             </div>
           )}
+          
+          {/* Dummy div to scroll to */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Footer */}
