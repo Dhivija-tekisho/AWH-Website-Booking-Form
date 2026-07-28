@@ -1,0 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --color-primary: #143d2f;
+  --color-primary-light: #1f5642;
+  --color-bg-chat: #eff4f1;
+  --color-bg-white: #ffffff;
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #1ebd5a;
+  --color-gold: #c8a165;
+  --color-gold-hover: #b48d53;
+  --color-text-main: #143d2f;
+  --color-text-muted: #69877b;
+  --color-text-white: #ffffff;
+  --color-border: #e4e8e5;
+  --color-page-bg: #f5f7f6;
+  
+  --font-main: 'Inter', sans-serif;
+  
+  --shadow-sm: 0 2px 8px rgba(20, 61, 47, 0.05);
+  --shadow-md: 0 4px 12px rgba(20, 61, 47, 0.08);
+  --shadow-lg: 0 12px 32px rgba(20, 61, 47, 0.15);
+  --shadow-widget: 0 12px 48px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--color-page-bg);
+  color: var(--color-text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+input {
+  font-family: inherit;
+  outline: none;
+}
+
+/* Custom Scrollbar for chat area */
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(20, 61, 47, 0.2);
+  border-radius: 10px;
+}
+.chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(20, 61, 47, 0.3);
+}
+
+/* Animations */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
