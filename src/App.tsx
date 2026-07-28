@@ -1,9 +1,74 @@
 import { useState, useRef, useEffect, ReactNode } from 'react';
-import { MessageCircle, Mic, Send, X } from 'lucide-react';
+import { MessageCircle, Mic, Send, X, Volume2, VolumeX, Globe, ChevronDown } from 'lucide-react';
 import { CLINIC } from '@/booking';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { LanguageToggle, useLang } from '@/i18n';
 import './App.css';
+
+type Language = 'en' | 'hi' | 'te';
+
+interface Translations {
+  online: string;
+  subtitle: string;
+  welcomeMessage: string;
+  bookAppointment: string;
+  suggestionPills: string[];
+  inputPlaceholder: string;
+}
+
+const translations: Record<Language, Translations> = {
+  en: {
+    online: 'Online',
+    subtitle: 'Care Companion · always here for you',
+    welcomeMessage: "Namaste, and welcome. 🙏 I'm Asha, your care companion at KVNN's Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?",
+    bookAppointment: 'Book appointment',
+    suggestionPills: [
+      "My wound isn't healing",
+      "Diabetic foot care",
+      "Told I might lose my leg",
+      "What is HBOT?",
+      "Book an appointment",
+      "Where are you located?"
+    ],
+    inputPlaceholder: 'Type your question...'
+  },
+  hi: {
+    online: 'ऑनलाइन',
+    subtitle: 'केयर साथी · आपके लिए हमेशा तैयार',
+    welcomeMessage: 'नमस्ते, और आपका स्वागत है। 🙏 मैं आशा हूँ, KVNN के एडवांस्ड वूंड हीलिंग क्लिनिक में आपकी देखभाल साथी। आप मुझसे घाव, हमारे उपचार, अपॉइंटमेंट बुक करने या किसी भी विषय के बारे में पूछ सकते हैं। आज मैं आपकी क्या मदद कर सकती हूँ?',
+    bookAppointment: 'अपॉइंटमेंट बुक करें',
+    suggestionPills: [
+      'मेरा घाव ठीक नहीं हो रहा है',
+      'डायबिटीज पैर की देखभाल',
+      'पैर गंवाने का जोखिम',
+      'HBOT क्या है?',
+      'अपॉइंटमेंट बुक करें',
+      'आपका क्लिनिक कहाँ स्थित है?'
+    ],
+    inputPlaceholder: 'अपना प्रश्न लिखें...'
+  },
+  te: {
+    online: 'ఆన్‌లైన్',
+    subtitle: 'సంరక్షణ భాగస్వామి · మీకు ఎల్లప్పుడూ ఇక్కడ ఉన్నారు',
+    welcomeMessage: 'నమస్తే, మరియు స్వాగతం. 🙏 నేను ఆశా, KVNN యొక్క అడ్వాన్స్‌డ్ ఊండ్ హీలింగ్ క్లినిక్స్‌లో మీ సంరక్షణ భాగస్వామిని. మీరు నన్ను గాయం, మా చికిత్సలు, విజిట్ బుకింగ్ లేదా ఏదైనా విషయం గురించి అడగవచ్చు. ఈ రోజు నేను మీకు ఎలా సహాయపడగలను?',
+    bookAppointment: 'అపాయింట్‌మెంట్ బుక్ చేయండి',
+    suggestionPills: [
+      'నా గాయం మానడం లేదు',
+      'డయాబెటిక్ పాదాల సంరక్షణ',
+      'కాలు తొలగించే ప్రమాదం',
+      'HBOT అంటే ఏమిటి?',
+      'అపాయింట్‌మెంట్ బుక్ చేయండి',
+      'మీ క్లినిక్ ఎక్కడ ఉంది?'
+    ],
+    inputPlaceholder: 'మీ ప్రశ్నను టైప్ చేయండి...'
+  }
+};
+
+const languageLabels: Record<Language, string> = {
+  en: 'EN',
+  hi: 'हिंदी',
+  te: 'తెలుగు'
+};
 
 type Role = 'bot' | 'user';
 
@@ -11,31 +76,8 @@ interface Message {
   id: string;
   role: Role;
   content: ReactNode;
+  showBookButton?: boolean;
 }
-
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: 'msg-1',
-    role: 'bot',
-    content: (
-      <>
-        Hi 👋<br /><br />
-        I'm <strong>Asha</strong>, your virtual assistant from <strong>Advanced Wound Healing Hospital</strong>.<br /><br />
-        I'm here to help you with appointments, wound care guidance, treatment information, doctors, and any questions about our hospital.<br /><br />
-        How can I help you today?
-      </>
-    ),
-  },
-];
-
-const SUGGESTIONS = [
-  'Book Appointment',
-  'Wound Care',
-  'Meet Our Doctors',
-  'Treatment Cost',
-  'Existing Appointment',
-  'Hospital Location'
-];
 
 type FlowStep = 'idle' | 'asking_name' | 'redirecting';
 
@@ -43,28 +85,49 @@ function App() {
   const [isOpen, setIsOpen] = useState(false);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [inputValue, setInputValue] = useState('');
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [language, setLanguage] = useState<Language>('en');
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
+  
+  const [messages, setMessages] = useState<Message[]>([]);
   const [flowStep, setFlowStep] = useState<FlowStep>('idle');
   const [bookingView, setBookingView] = useState<{ active: boolean; patientType?: 'new'|'existing'; name?: string }>({ active: false });
-  
-  const { t } = useLang();
-  const chatBodyRef = useRef<HTMLDivElement>(null);
 
+  const { t: i18nT } = useLang();
+  const t = translations[language];
+
+  // Initialize first message based on language
   useEffect(() => {
-    if (chatBodyRef.current) {
-      chatBodyRef.current.scrollTop = chatBodyRef.current.scrollHeight;
+    if (messages.length === 0) {
+      setMessages([{
+        id: 'msg-1',
+        role: 'bot',
+        content: t.welcomeMessage,
+        showBookButton: true
+      }]);
+    } else {
+      // Update the first message if language changes
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        if (newMsgs.length > 0 && newMsgs[0].id === 'msg-1') {
+          newMsgs[0] = { ...newMsgs[0], content: t.welcomeMessage };
+        }
+        return newMsgs;
+      });
     }
-  }, [messages]);
+  }, [language, t.welcomeMessage]);
 
   const toggleWidget = () => setIsOpen(!isOpen);
   const toggleVoice = () => setIsVoiceEnabled(!isVoiceEnabled);
+  const selectLanguage = (lang: Language) => {
+    setLanguage(lang);
+    setIsLangMenuOpen(false);
+  };
 
   const addMessage = (role: Role, content: ReactNode) => {
     setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content }]);
   };
 
   const simulateRedirect = (type: 'existing' | 'new', name: string) => {
-    // Instantly switch to the booking view
     setBookingView({ active: true, patientType: type, name });
   };
 
@@ -92,7 +155,7 @@ function App() {
           addMessage('bot', "I'm still learning, but I can help you book an appointment! Would you like to do that?");
         }
       } else if (flowStep === 'asking_name') {
-        const isRamesh = lowerText === 'ramesh kumar';
+        const isRamesh = lowerText.includes('ramesh kumar');
         const firstName = trimmed.split(' ')[0];
         
         if (isRamesh) {
@@ -111,6 +174,16 @@ function App() {
     }, 600); // Simulate typing delay
   };
 
+  const handleBookClick = () => {
+    addMessage('bot', (
+      <>
+        I'd be happy to help with that.<br /><br />
+        Before we proceed, may I know your full name?
+      </>
+    ));
+    setFlowStep('asking_name');
+  };
+
   if (bookingView.active) {
     return (
       <main className="mx-auto flex h-dvh max-w-3xl flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
@@ -119,19 +192,19 @@ function App() {
             <LanguageToggle />
           </div>
           <p className="text-[0.75rem] font-semibold uppercase tracking-widest text-jade">
-            {t('app.eyebrow')}
+            {i18nT('app.eyebrow')}
           </p>
           <h1 className="mt-1 text-[clamp(1.55rem,4vw,2.15rem)] font-semibold text-ink">
-            {t('app.title')}
+            {i18nT('app.title')}
           </h1>
           <p className="mt-0.5 text-[0.88rem] text-ink-soft">{CLINIC.name}</p>
         </header>
         <div className="min-h-0 flex-1">
           <BookingWizard 
             initialOverrides={{ 
-              patientType: bookingView.patientType, 
+              patientType: bookingView.patientType as any, 
               name: bookingView.name,
-              step: 2 // Jump straight to verify step
+              step: 2 
             }} 
           />
         </div>
@@ -153,65 +226,104 @@ function App() {
         {/* Header */}
         <div className="chat-header">
           <div className="chat-header-content">
-            <div className="avatar-container">A</div>
-            <div className="header-text">
-              <span className="header-title">Asha</span>
-              <span className="header-subtitle">Care Companion · always here for you</span>
+            <div className="header-avatar-orbit">
+              <div className="header-avatar-orb"></div>
             </div>
+            <span className="header-title">Asha</span>
           </div>
-          <div className="header-status">
-            <div className="status-dot"></div>
-            Ready
+          <div className="header-actions">
+            <button 
+              className="header-action-btn" 
+              onClick={toggleVoice} 
+              aria-label={isVoiceEnabled ? "Mute voice output" : "Enable voice output"}
+              title={isVoiceEnabled ? "Voice output enabled" : "Voice output muted"}
+            >
+              {isVoiceEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            </button>
+            <div className="lang-dropdown-container">
+              <button 
+                className="header-action-btn lang-btn" 
+                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} 
+                aria-label="Select language"
+                title="Change language"
+              >
+                <Globe size={12} />
+                <span className="lang-code">{languageLabels[language]}</span>
+                <ChevronDown size={10} className={`dropdown-arrow ${isLangMenuOpen ? 'open' : ''}`} />
+              </button>
+              {isLangMenuOpen && (
+                <div className="lang-menu">
+                  <button 
+                    className={`lang-option ${language === 'en' ? 'active' : ''}`}
+                    onClick={() => selectLanguage('en')}
+                  >
+                    English (EN)
+                  </button>
+                  <button 
+                    className={`lang-option ${language === 'hi' ? 'active' : ''}`}
+                    onClick={() => selectLanguage('hi')}
+                  >
+                    हिंदी (Hindi)
+                  </button>
+                  <button 
+                    className={`lang-option ${language === 'te' ? 'active' : ''}`}
+                    onClick={() => selectLanguage('te')}
+                  >
+                    తెలుగు (Telugu)
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Body */}
-        <div className="chat-body chat-scroll" ref={chatBodyRef}>
-          
-          {messages.map((msg) => (
-            <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'user-message' : ''}`}>
-              {msg.role === 'bot' && <div className="message-avatar">A</div>}
-              <div className="message-content">
-                <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : ''}`}>
-                  {msg.content}
+        <div className="chat-body chat-scroll">
+          <div className="chat-messages">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'user-message' : ''}`}>
+                {msg.role === 'bot' && <div className="message-avatar">A</div>}
+                <div className="message-content">
+                  <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : ''}`}>
+                    {msg.content}
+                  </div>
+                  {msg.showBookButton && flowStep === 'idle' && (
+                    <div className="action-buttons">
+                      <button className="btn-primary" onClick={handleBookClick}>{t.bookAppointment}</button>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
 
+          {/* Recommended Questions Section */}
           {flowStep === 'idle' && (
-            <div className="suggestion-pills">
-              {SUGGESTIONS.map((sug) => (
-                <button 
-                  key={sug} 
-                  className="pill" 
-                  onClick={() => handleSend(sug)}
-                >
-                  {sug}
-                </button>
-              ))}
+            <div className="suggestion-pills-wrapper">
+              <div className="suggestion-pills-track">
+                {[...t.suggestionPills, ...t.suggestionPills].map((pillText, idx) => (
+                  <button 
+                    key={idx} 
+                    className="pill"
+                    onClick={() => handleSend(pillText)}
+                  >
+                    <MessageCircle size={14} className="pill-icon" />
+                    <span>{pillText}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
-          
         </div>
 
         {/* Footer */}
         <div className="chat-footer">
-          <div className="footer-top">
-            <span className="voice-label">Asha's voice</span>
-            <button className="toggle-switch" onClick={toggleVoice} aria-label="Toggle voice">
-              <div 
-                className="toggle-knob" 
-                style={{ transform: isVoiceEnabled ? 'translateX(20px)' : 'translateX(0)' }}
-              ></div>
-            </button>
-          </div>
           <div className="footer-bottom">
             <div className="input-container">
               <input 
                 type="text" 
                 className="chat-input" 
-                placeholder="Type your message..." 
+                placeholder={t.inputPlaceholder} 
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend(inputValue)}
@@ -219,15 +331,15 @@ function App() {
               />
             </div>
             <button className="btn-icon btn-mic" aria-label="Use microphone">
-              <Mic size={20} />
+              <Mic size={18} />
             </button>
             <button 
               className="btn-icon btn-send" 
+              aria-label="Send message"
               onClick={() => handleSend(inputValue)}
               disabled={!inputValue.trim() || flowStep === 'redirecting'}
-              aria-label="Send message"
             >
-              <Send size={20} />
+              <Send size={18} />
             </button>
           </div>
         </div>
