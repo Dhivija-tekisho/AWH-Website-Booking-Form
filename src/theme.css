@@ -1,0 +1,70 @@
+/* ============================================================
+   THEME — edit colors here only. Tailwind reads these variables.
+   ============================================================ */
+:root {
+  --color-ivory: #fbf8f2;
+  --color-cloud: #f3eee4;
+  --color-mist: #eaf2ee;
+  --color-mist-2: #ddebe4;
+  --color-emerald: #0e4a40;
+  --color-emerald-2: #135c50;
+  --color-emerald-deep: #093229;
+  --color-jade: #2fa68c;
+  --color-jade-bright: #43c2a6;
+  --color-jade-soft: #cfe8df;
+  --color-gold: #c6a15b;
+  --color-gold-2: #d8bc82;
+  --color-gold-soft: #efe2c4;
+  --color-rose: #e7b6a2;
+  --color-rose-soft: #f6e3d9;
+  --color-ink: #1b2a25;
+  --color-ink-soft: #566159;
+  --color-ink-faint: #8a968f;
+  --color-line: rgba(14, 74, 64, 0.12);
+  --color-line-soft: rgba(14, 74, 64, 0.07);
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    @apply bg-ivory font-sans text-ink antialiased;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(1100px 700px at 85% -8%, rgba(214, 188, 130, 0.2), transparent 60%),
+      radial-gradient(900px 600px at 5% 0%, rgba(231, 182, 162, 0.14), transparent 55%),
+      radial-gradient(1000px 900px at 50% 100%, rgba(47, 166, 140, 0.1), transparent 60%);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-serif;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-jade);
+    outline-offset: 2px;
+  }
+}

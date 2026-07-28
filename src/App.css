@@ -61,7 +61,7 @@
 /* Header */
 .chat-header {
   background-color: var(--color-primary);
-  padding: 24px 20px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -94,14 +94,14 @@
 }
 
 .avatar-container {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-full);
   background: radial-gradient(circle at 30% 30%, #fef3da, #eecf9e 60%, #c9a367);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--color-text-main);
   box-shadow: 0 0 0 1px rgba(255,255,255,0.2), inset 0 2px 4px rgba(255,255,255,0.5);
@@ -113,13 +113,13 @@
 }
 
 .header-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   margin-bottom: 2px;
 }
 
 .header-subtitle {
-  font-size: 12px;
+  font-size: 11px;
   color: #a4b8b0;
   font-weight: 500;
 }
@@ -331,4 +331,49 @@
 
 .btn-send:hover {
   background-color: var(--color-primary-light);
+}
+
+.btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* User Messages */
+.user-message {
+  flex-direction: row-reverse;
+}
+
+.user-bubble {
+  background-color: var(--color-primary);
+  color: var(--color-text-white);
+  border-radius: 16px 16px 4px 16px;
+}
+
+/* Redirect Indicator */
+.redirect-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(96, 196, 154, 0.1);
+  color: var(--color-primary);
+  padding: 12px 16px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 auto;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(20, 61, 47, 0.2);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
