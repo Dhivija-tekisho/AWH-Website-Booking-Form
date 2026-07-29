@@ -1,14 +1,14 @@
-import { UserCheck, UserPlus } from 'lucide-react';
-import { InputField, TextareaField } from '@/components/ui/Field';
-import { SelectMark } from './shared';
+import { UserCheck } from 'lucide-react';
+import { InputField } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
+import { SelectMark, StepHeader } from './shared';
 import {
   GENDER_OPTIONS,
-  VISIT_PURPOSE_OPTIONS,
-  WOUND_DURATION_OPTIONS,
   type BookingDetails,
+  type ExistingPatientRecord,
   type Gender,
   type PatientType,
-  type VisitPurpose,
+  type VerifyPhase,
 } from '@/booking';
 import { useLang } from '@/i18n';
 
@@ -18,6 +18,12 @@ interface Props {
   phone: string;
   details: BookingDetails;
   onChange: (patch: Partial<BookingDetails>) => void;
+  matchedPatients?: ExistingPatientRecord[];
+  onSelectMatchedPatient?: (patient: ExistingPatientRecord) => void;
+  otp?: string;
+  verifyPhase?: VerifyPhase;
+  onOtpChange?: (otp: string) => void;
+  onSendOtp?: () => void;
 }
 
 function ChoiceRow<T extends string>({
@@ -26,19 +32,25 @@ function ChoiceRow<T extends string>({
   options,
   value,
   onSelect,
+  columns = 2,
 }: {
   label: string;
   required?: boolean;
   options: { id: T; label: string; description?: string }[];
   value: T | '' | null;
   onSelect: (id: T) => void;
+  columns?: 2 | 3;
 }) {
   return (
     <div className="mb-3">
-      <p className="mb-1.5 text-[0.82rem] font-semibold">
+      <p className="mb-2 text-[0.82rem] font-semibold leading-snug [overflow-wrap:anywhere]">
         {label} {required && <span className="text-rose">*</span>}
       </p>
-      <div className="grid gap-1.5 sm:grid-cols-2">
+      <div
+        className={`grid gap-2 ${
+          columns === 3 ? 'grid-cols-3' : 'grid-cols-1 min-[420px]:grid-cols-2'
+        }`}
+      >
         {options.map((opt) => {
           const active = value === opt.id;
           return (
@@ -48,16 +60,18 @@ function ChoiceRow<T extends string>({
               onClick={() => onSelect(opt.id)}
               aria-pressed={active}
               className={[
-                'flex w-full items-center gap-2 rounded-lg border-2 px-2.5 py-2 text-left transition-all',
+                'flex w-full items-center gap-2 rounded-lg border-2 px-3 py-2 text-left transition-all',
                 active
                   ? 'border-emerald bg-mist/60 shadow-sm'
                   : 'border-line bg-white hover:border-jade/50',
               ].join(' ')}
             >
               <span className="min-w-0 flex-1">
-                <span className="block text-[0.88rem] font-semibold text-ink">{opt.label}</span>
+                <span className="block text-[0.85rem] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
+                  {opt.label}
+                </span>
                 {opt.description && (
-                  <span className="mt-0.5 block text-[0.75rem] leading-snug text-ink-soft">
+                  <span className="mt-1 block text-[0.74rem] leading-snug text-ink-soft [overflow-wrap:anywhere]">
                     {opt.description}
                   </span>
                 )}
@@ -71,115 +85,126 @@ function ChoiceRow<T extends string>({
   );
 }
 
-export function StepDetails({ patientType, patientId, phone, details, onChange }: Props) {
+export function StepDetails({
+  patientType,
+  patientId,
+  phone,
+  details,
+  matchedPatients = [],
+  onSelectMatchedPatient,
+  otp = '',
+  verifyPhase = 'phone',
+  onOtpChange,
+  onSendOtp,
+  onChange,
+}: Props) {
   const { t } = useLang();
   const existing = patientType === 'existing';
+  const otpSent = verifyPhase === 'otp';
+  const canSend = phone.replace(/\D/g, '').length >= 10;
 
   if (existing) {
-    const needsNotes = details.visitPurpose === 'new-concern';
+    const single = matchedPatients.length === 1 ? matchedPatients[0]! : null;
 
     return (
-      <div className="h-full">
-        <h2 className="text-[clamp(1.25rem,2.8vw,1.7rem)] font-semibold text-ink">
-          {t('details.existing.title')}
-        </h2>
-        <p className="mt-1 text-[0.88rem] text-ink-soft">{t('details.existing.subtitle')}</p>
+      <div className="flex min-h-full flex-col">
+        <StepHeader title={t('details.matched.title')} />
 
-        <div className="mt-3 rounded-lg border-2 border-emerald/40 bg-mist/50 p-3">
-          <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gradient-to-br from-mist to-mist-2 text-emerald">
-              <UserCheck className="h-5 w-5" strokeWidth={1.8} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-wide text-ink-faint">
-                {t('details.onFile')}
-              </p>
-              <p className="mt-0.5 text-[1rem] font-semibold text-ink">{details.name || '—'}</p>
-              <p className="text-[0.82rem] text-ink-soft">
-                {patientId ? `ID ${patientId}` : t('details.returning')} · {phone}
-              </p>
+        <div className="flex flex-col gap-3">
+          {single ? (
+            <div className="rounded-lg border-2 border-emerald/40 bg-mist/50 p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gradient-to-br from-mist to-mist-2 text-emerald">
+                  <UserCheck className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[0.7rem] font-semibold uppercase leading-snug tracking-wide text-ink-faint [overflow-wrap:anywhere]">
+                    {t('details.onFile')}
+                  </p>
+                  <p className="text-[0.95rem] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
+                    {single.name}
+                  </p>
+                  <p className="mt-1 text-[0.8rem] leading-snug text-ink-soft [overflow-wrap:anywhere]">
+                    ID {single.patientId} · {phone}
+                  </p>
+                </div>
+              </div>
+              <dl className="mt-3 grid grid-cols-1 gap-2 border-t border-line/80 pt-3 text-[0.8rem] min-[420px]:grid-cols-3">
+                <div className="min-w-0">
+                  <dt className="leading-snug text-ink-faint">{t('details.age.label')}</dt>
+                  <dd className="font-semibold leading-snug text-ink">{single.age}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="leading-snug text-ink-faint">{t('details.gender')}</dt>
+                  <dd className="font-semibold leading-snug text-ink">
+                    {t(`gender.${single.gender}`)}
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="leading-snug text-ink-faint">{t('details.locality.label')}</dt>
+                  <dd className="font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
+                    {single.locality}
+                  </dd>
+                </div>
+              </dl>
             </div>
-          </div>
-          <dl className="mt-2 grid gap-1.5 border-t border-line/80 pt-2 text-[0.82rem] sm:grid-cols-3">
-            <div>
-              <dt className="text-ink-faint">{t('details.age')}</dt>
-              <dd className="font-semibold text-ink">{details.age || '—'}</dd>
-            </div>
-            <div>
-              <dt className="text-ink-faint">{t('details.gender')}</dt>
-              <dd className="font-semibold text-ink">
-                {details.gender ? t(`gender.${details.gender}`) : '—'}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-ink-faint">{t('details.locality')}</dt>
-              <dd className="font-semibold text-ink">{details.locality || '—'}</dd>
-            </div>
-          </dl>
-        </div>
-
-        <div className="mt-3">
-          <ChoiceRow<VisitPurpose>
-            label={t('details.visitWhy')}
-            required
-            options={VISIT_PURPOSE_OPTIONS.map((id) => ({
-              id,
-              label: t(`visit.${id}.label`),
-              description: t(`visit.${id}.desc`),
-            }))}
-            value={details.visitPurpose}
-            onSelect={(visitPurpose) => onChange({ visitPurpose })}
-          />
-
-          <TextareaField
-            label={needsNotes ? t('details.notes.newConcern') : t('details.notes.optional')}
-            required={needsNotes}
-            value={details.notes}
-            placeholder={
-              needsNotes
-                ? t('details.notes.placeholder.required')
-                : t('details.notes.placeholder.optional')
-            }
-            onChange={(e) => onChange({ notes: e.target.value })}
-          />
+          ) : (
+            matchedPatients.map((patient) => {
+              const active = patientId === patient.patientId;
+              return (
+                <button
+                  key={patient.patientId}
+                  type="button"
+                  onClick={() => onSelectMatchedPatient?.(patient)}
+                  aria-pressed={active}
+                  className={[
+                    'flex w-full items-start gap-3 rounded-lg border-2 p-3 text-left transition-all',
+                    active
+                      ? 'border-emerald bg-mist/60 shadow-sm'
+                      : 'border-line bg-white hover:border-jade/50 hover:bg-mist/30',
+                  ].join(' ')}
+                >
+                  <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gradient-to-br from-mist to-mist-2 text-emerald">
+                    <UserCheck className="h-5 w-5" strokeWidth={1.8} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[0.95rem] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
+                      {patient.name}
+                    </span>
+                    <span className="mt-1 block text-[0.8rem] leading-snug text-ink-soft [overflow-wrap:anywhere]">
+                      ID {patient.patientId} · {t('details.age.label')} {patient.age} ·{' '}
+                      {t(`gender.${patient.gender}`)}
+                    </span>
+                    <span className="mt-1 block text-[0.76rem] leading-snug text-ink-faint [overflow-wrap:anywhere]">
+                      {patient.locality}
+                    </span>
+                  </span>
+                  <SelectMark active={active} />
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full">
-      <h2 className="text-[clamp(1.25rem,2.8vw,1.7rem)] font-semibold text-ink">
-        {t('details.new.title')}
-      </h2>
-      <p className="mt-1 text-[0.88rem] text-ink-soft">{t('details.new.subtitle')}</p>
+    <div className="flex min-h-full flex-col">
+      <StepHeader title={t('details.new.title')} />
 
-      <div className="mb-3 mt-3 flex items-center gap-3 rounded-lg border border-line bg-mist/40 px-3 py-2">
-        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gradient-to-br from-mist to-mist-2 text-emerald">
-          <UserPlus className="h-5 w-5" strokeWidth={1.8} />
-        </span>
-        <div>
-          <p className="text-[0.72rem] font-semibold uppercase tracking-wide text-ink-faint">
-            {t('details.creating')}
-          </p>
-          <p className="text-[0.88rem] text-ink-soft">
-            {t('details.verifiedMobile')} <span className="font-semibold text-ink">{phone}</span>
-          </p>
-        </div>
-      </div>
-
-      <InputField
-        label={t('details.fullName')}
-        required
-        value={details.name}
-        autoComplete="name"
-        placeholder={t('details.fullName.placeholder')}
-        onChange={(e) => onChange({ name: e.target.value })}
-      />
-
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-1">
         <InputField
-          label={t('details.age')}
+          label={t('details.fullName.label')}
+          required
+          value={details.name}
+          autoComplete="name"
+          placeholder={t('details.fullName.placeholder')}
+          onChange={(e) => onChange({ name: e.target.value })}
+        />
+
+        <InputField
+          label={t('details.age.label')}
           required
           type="number"
           min={0}
@@ -188,42 +213,52 @@ export function StepDetails({ patientType, patientId, phone, details, onChange }
           placeholder={t('details.age.placeholder')}
           onChange={(e) => onChange({ age: e.target.value })}
         />
-        <InputField
-          label={t('details.locality.label')}
+
+        <ChoiceRow<Gender>
+          label={t('details.gender')}
           required
-          value={details.locality}
-          autoComplete="address-level2"
-          placeholder={t('details.locality.placeholder')}
-          onChange={(e) => onChange({ locality: e.target.value })}
+          columns={3}
+          options={GENDER_OPTIONS.map((id) => ({ id, label: t(`gender.${id}`) }))}
+          value={details.gender}
+          onSelect={(gender) => onChange({ gender })}
+        />
+
+        <div className="mb-3">
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1 [&_>div]:mb-0">
+              <InputField
+                label={t('verify.phone.label')}
+                required
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                placeholder={t('verify.phone.placeholder')}
+                onChange={(e) => onChange({ phone: e.target.value })}
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-0 h-auto min-h-[44px] w-auto shrink-0 px-3"
+              onClick={onSendOtp}
+              disabled={!canSend}
+            >
+              {otpSent ? t('nav.resendOtp') : t('nav.sendOtp')}
+            </Button>
+          </div>
+        </div>
+
+        <InputField
+          label={t('verify.otp.label')}
+          required
+          inputMode="text"
+          autoComplete="one-time-code"
+          value={otp}
+          placeholder={t('verify.otp.placeholder')}
+          disabled={!otpSent}
+          onChange={(e) => onOtpChange?.(e.target.value)}
         />
       </div>
-
-      <ChoiceRow<Gender>
-        label={t('details.gender')}
-        required
-        options={GENDER_OPTIONS.map((id) => ({ id, label: t(`gender.${id}`) }))}
-        value={details.gender}
-        onSelect={(gender) => onChange({ gender })}
-      />
-
-      <ChoiceRow<string>
-        label={t('details.woundDuration')}
-        required
-        options={WOUND_DURATION_OPTIONS.map((id) => ({
-          id,
-          label: t(`wound.${id}`),
-        }))}
-        value={details.woundDuration}
-        onSelect={(woundDuration) => onChange({ woundDuration })}
-      />
-
-      <TextareaField
-        label={t('details.concern')}
-        required
-        value={details.notes}
-        placeholder={t('details.concern.placeholder')}
-        onChange={(e) => onChange({ notes: e.target.value })}
-      />
     </div>
   );
 }

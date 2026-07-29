@@ -7,7 +7,7 @@
     "switch": "Language"
   },
   "app": {
-    "eyebrow": "New appointment",
+    "eyebrow": "",
     "title": "Book a visit"
   },
   "step": {
@@ -24,19 +24,20 @@
     "continue": "Continue",
     "review": "Review",
     "sendOtp": "Send OTP",
+    "resendOtp": "Resend",
     "verifyContinue": "Verify & continue",
-    "confirmSend": "Confirm & Send"
+    "confirmSend": "Confirm"
   },
   "patient": {
     "title": "Are you a new or existing patient?",
-    "subtitle": "This helps us prepare the right check-in for your appointment.",
+    "subtitle": "Select an option to continue with your booking.",
     "new": {
       "name": "New patient",
-      "desc": "First visit — we will set up your record when you arrive."
+      "desc": "First visit — we will set up your record when you arrive. No prior details needed."
     },
     "existing": {
       "name": "Existing patient",
-      "desc": "You have visited us before — we will match your details."
+      "desc": "You have visited us before — we will match your details securely via OTP."
     }
   },
   "verify": {
@@ -61,17 +62,24 @@
       },
       "label": "OTP",
       "placeholder": "Enter any code (demo)",
-      "demo": "Demo mode: any text works as the OTP — no real SMS is sent."
+      "demo": "Demo mode: any text works as the OTP — no real SMS is sent.",
+      "hint": "Enter mobile, tap Send OTP, then enter any code (demo — no SMS).",
+      "sent": "OTP sent to {phone}. Enter any code to continue (demo)."
     }
   },
   "details": {
     "existing": {
       "title": "Welcome back",
-      "subtitle": "Your record is on file — just tell us why you are coming in. No need to re-enter personal details."
+      "subtitle": ""
     },
     "onFile": "On file · read only",
     "returning": "Returning patient",
+    "matched": {
+      "title": "Patients on this mobile",
+      "subtitle": ""
+    },
     "age": {
+      "label": "Age",
       "placeholder": "Years"
     },
     "gender": "Gender",
@@ -95,10 +103,12 @@
     "creating": "Creating new record",
     "verifiedMobile": "Verified mobile",
     "fullName": {
+      "label": "Full name",
       "placeholder": "e.g. Ramesh Kumar"
     },
     "woundDuration": "How long has the wound been present?",
     "concern": {
+      "label": "Describe your wound or concern",
       "placeholder": "e.g. diabetic foot ulcer on left heel, discharge for 3 weeks"
     }
   },
@@ -154,7 +164,7 @@
       "desc": "Wounds that have stayed open for weeks or months, healed properly."
     },
     "advanced": {
-      "name": "Advanced Therapies (HBOT · NPWT)",
+      "name": "Advanced Therapies",
       "desc": "Hyperbaric oxygen, vacuum therapy & regenerative treatments."
     },
     "general": {
@@ -175,17 +185,9 @@
       "name": "Senior Wound Care Specialist",
       "role": "Chronic & Non-Healing Wounds"
     },
-    "podiatry": {
-      "name": "Diabetic Foot Specialist",
-      "role": "Podiatry & Diabetic Foot"
-    },
-    "hbot": {
-      "name": "Hyperbaric & Advanced Therapy Lead",
-      "role": "HBOT · NPWT · Regenerative"
-    },
-    "nurse": {
-      "name": "Lead Wound Care Nurse",
-      "role": "Dressings & Daily Healing Support"
+    "korada": {
+      "name": "Dr. Hrishikesh Korada",
+      "role": "Advanced Therapies"
     }
   },
   "spec": {
@@ -211,7 +213,7 @@
   },
   "datetime": {
     "title": "Pick a date & time",
-    "subtitle": "Open slots update live. Greyed-out times are already booked.",
+    "subtitle": "",
     "sunday": "Sunday — limited, by appointment",
     "times": "Available times"
   },
@@ -240,7 +242,7 @@
   },
   "review": {
     "title": "Confirm your appointment",
-    "subtitle": "Please check the details. Confirming opens WhatsApp with your request pre-filled.",
+    "subtitle": "",
     "patient": "Patient",
     "patientId": "Patient ID",
     "visitPurpose": "Visit purpose",
@@ -261,12 +263,12 @@
     "existingPatient": "Existing patient"
   },
   "success": {
-    "title": "Your request is on its way",
+    "title": "Appointment confirmed",
     "body": {
       "before": "Thank you,",
       "friend": "friend",
-      "mid": ". We have prepared your appointment request for",
-      "after": "and opened WhatsApp so our team can confirm it with you personally."
+      "mid": ". Your appointment is confirmed for",
+      "after": "."
     },
     "reference": "Reference",
     "whatsapp": "Open WhatsApp again",
@@ -306,6 +308,8 @@
     "notes": "Please briefly describe your wound or concern.",
     "department": "Please choose a department to continue.",
     "slot": "Please pick an available time slot.",
+    "sendOtpFirst": "Please send OTP to your mobile first.",
+    "matchedPatient": "Please choose which patient this booking is for.",
     "generic": "Please complete this step."
   }
 }

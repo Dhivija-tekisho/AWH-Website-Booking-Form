@@ -22,7 +22,16 @@
   --color-ink-faint: #8a968f;
   --color-line: rgba(14, 74, 64, 0.12);
   --color-line-soft: rgba(14, 74, 64, 0.07);
+  --color-whatsapp: #1fa855;
+  --color-whatsapp-hover: #178a45;
+  --color-danger: #b4523a;
 }
+
+/* ============================================================
+   SPACING — 8px grid with a 4px half-step. Use only Tailwind
+   steps 1/2/3/4/6/8 (4/8/12/16/24/32px) for margin, padding
+   and gap. No ad hoc values.
+   ============================================================ */
 
 @tailwind base;
 @tailwind components;
@@ -39,7 +48,17 @@
   body {
     @apply bg-ivory font-sans text-ink antialiased;
     font-size: 16px;
-    line-height: 1.5;
+    line-height: 1.55;
+  }
+
+  /* Translated strings are unpredictable in length; never let one spill
+     out of its box. */
+  body,
+  button,
+  input,
+  textarea,
+  select {
+    overflow-wrap: break-word;
   }
 
   body::before {
@@ -59,8 +78,66 @@
   h3,
   h4 {
     @apply font-serif;
-    line-height: 1.1;
+    line-height: 1.25;
     letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  /* ----------------------------------------------------------
+     Indic scripts (Telugu, Devanagari) stack matras above and
+     below the baseline, so the tight Latin metrics above clip
+     them. Give every element more leading, drop the negative
+     tracking, and use fonts that actually ship these glyphs.
+     ---------------------------------------------------------- */
+  :root:lang(te) body,
+  :root:lang(hi) body {
+    line-height: 1.7;
+  }
+
+  :root:lang(te) h1,
+  :root:lang(te) h2,
+  :root:lang(te) h3,
+  :root:lang(te) h4,
+  :root:lang(hi) h1,
+  :root:lang(hi) h2,
+  :root:lang(hi) h3,
+  :root:lang(hi) h4 {
+    line-height: 1.45;
+    letter-spacing: 0;
+  }
+
+  :root:lang(te) body {
+    font-family: 'Noto Sans Telugu', 'Hanken Grotesk', system-ui, sans-serif;
+  }
+
+  :root:lang(hi) body {
+    font-family: 'Noto Sans Devanagari', 'Hanken Grotesk', system-ui, sans-serif;
+  }
+
+  /* The serif display face has no Telugu/Devanagari coverage — fall back
+     to the matching Noto so headings don't render in a mismatched font. */
+  :root:lang(te) h1,
+  :root:lang(te) h2,
+  :root:lang(te) h3,
+  :root:lang(te) h4 {
+    font-family: 'Noto Serif Telugu', 'Noto Sans Telugu', Georgia, serif;
+  }
+
+  :root:lang(hi) h1,
+  :root:lang(hi) h2,
+  :root:lang(hi) h3,
+  :root:lang(hi) h4 {
+    font-family: 'Noto Serif Devanagari', 'Noto Sans Devanagari', Georgia, serif;
+  }
+
+  /* `leading-none` on buttons clips descenders and matras. Indic labels
+     need real leading, and they must be free to wrap to a second line. */
+  :root:lang(te) button,
+  :root:lang(hi) button,
+  :root:lang(te) label,
+  :root:lang(hi) label {
+    line-height: 1.5;
+    letter-spacing: 0;
   }
 
   :focus-visible {

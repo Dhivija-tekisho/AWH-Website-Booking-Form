@@ -1,8 +1,33 @@
 import { Check, ArrowRight } from 'lucide-react';
-import type { SVGProps } from 'react';
-import { BOOKING_STEPS } from '@/booking';
+import type { ReactNode, SVGProps } from 'react';
+import { stepsForPatient, type PatientType } from '@/booking';
 import { Button } from '@/components/ui/Button';
 import { useLang } from '@/i18n';
+
+/**
+ * Shared selectable-card grid. Equal columns, fills the row, and reflows so
+ * department / specialist screens share the same card size and gap.
+ */
+export const CARD_GRID =
+  'grid gap-3 grid-cols-[repeat(auto-fit,minmax(14rem,1fr))]';
+
+/** Title + description block — identical vertical rhythm on every step. */
+export function StepHeader({
+  title,
+  subtitle,
+}: {
+  title: ReactNode;
+  subtitle?: ReactNode;
+}) {
+  return (
+    <header className="mb-3 flex-none sm:mb-4">
+      <h2 className="text-[clamp(1.25rem,2.8vw,1.7rem)] font-semibold text-ink">{title}</h2>
+      {subtitle ? (
+        <p className="mt-1 text-[0.88rem] leading-snug text-ink-soft">{subtitle}</p>
+      ) : null}
+    </header>
+  );
+}
 
 export function SelectMark({ active }: { active: boolean }) {
   return (
@@ -17,20 +42,27 @@ export function SelectMark({ active }: { active: boolean }) {
   );
 }
 
-export function BookingProgress({ step }: { step: number }) {
+export function BookingProgress({
+  step,
+  patientType = null,
+}: {
+  step: number;
+  patientType?: PatientType | null;
+}) {
   const { t } = useLang();
-  if (step > BOOKING_STEPS.length) return null;
+  const steps = stepsForPatient(patientType);
+  if (step > steps.length) return null;
   return (
-    <ol className="mb-4 flex flex-none items-center justify-between gap-1">
-      {BOOKING_STEPS.map((id, i) => {
+    <ol className="mb-3 flex flex-none items-start justify-between gap-1 sm:mb-4">
+      {steps.map((id, i) => {
         const n = i + 1;
         const done = n < step;
         const current = n === step;
         return (
-          <li key={id} className="flex flex-1 flex-col items-center gap-1 text-center">
+          <li key={id} className="flex w-0 flex-1 flex-col items-center gap-1 text-center">
             <span
               className={[
-                'flex h-7 w-7 items-center justify-center rounded-full text-[0.78rem] font-bold transition-colors',
+                'flex h-7 w-7 flex-none items-center justify-center rounded-full text-[0.78rem] font-bold transition-colors',
                 done
                   ? 'bg-emerald text-ivory'
                   : current
@@ -41,8 +73,8 @@ export function BookingProgress({ step }: { step: number }) {
               {done ? <Check className="h-4 w-4" strokeWidth={2.6} /> : n}
             </span>
             <span
-              className={`hidden text-[0.65rem] font-semibold sm:block ${
-                current ? 'text-emerald' : 'text-ink-faint'
+              className={`min-h-8 w-full text-[0.65rem] font-semibold leading-tight [overflow-wrap:anywhere] ${
+                current ? 'text-emerald' : 'hidden text-ink-faint sm:block'
               }`}
             >
               {t(`step.${id}`)}
@@ -54,32 +86,50 @@ export function BookingProgress({ step }: { step: number }) {
   );
 }
 
+
 interface NavProps {
   onBack?: () => void;
   onNext: () => void;
   nextLabel?: string;
+  /** Review uses the gold confirm button; every other step uses emerald. */
+  nextVariant?: 'emerald' | 'gold';
+  /** Leading icon. When given it replaces the trailing arrow. */
+  nextIcon?: ReactNode;
   error?: string | null;
 }
 
-export function BookingNav({ onBack, onNext, nextLabel, error }: NavProps) {
+/**
+ * Single footer for every step so actions sit at the same height with the
+ * same gaps and button sizes throughout.
+ */
+export function BookingNav({
+  onBack,
+  onNext,
+  nextLabel,
+  nextVariant = 'emerald',
+  nextIcon,
+  error,
+}: NavProps) {
   const { t } = useLang();
   return (
-    <div className="mt-3 flex-none">
+    <div className="flex-none">
       {error && (
-        <p className="mb-2 rounded-lg border border-rose/50 bg-rose-soft/50 px-3 py-2 text-[0.85rem] font-semibold text-[#b4523a]">
+        <p className="mb-2 rounded-lg border border-rose/50 bg-rose-soft/50 px-3 py-2 text-[0.85rem] font-semibold leading-snug text-danger">
           {error}
         </p>
       )}
-      <div className="flex items-center gap-3">
-        {onBack && (
-          <Button variant="ghost" size="sm" onClick={onBack}>
+      <div className="flex items-center justify-between gap-3">
+        {onBack ? (
+          <Button variant="ghost" size="sm" className="min-w-0 shrink" onClick={onBack}>
             {t('nav.back')}
           </Button>
+        ) : (
+          <span />
         )}
-        <span className="flex-1" />
-        <Button variant="emerald" size="md" onClick={onNext}>
+        <Button variant={nextVariant} size="md" className="max-w-[70%] flex-none" onClick={onNext}>
+          {nextIcon}
           {nextLabel ?? t('nav.continue')}
-          <ArrowRight className="h-4 w-4" />
+          {nextIcon ? null : <ArrowRight className="h-4 w-4" />}
         </Button>
       </div>
     </div>

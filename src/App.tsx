@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode, ChangeEvent } from 'react';
 import { MessageCircle, Mic, Send, X, Volume2, VolumeX, Globe, ChevronDown, ChevronsRight, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText } from 'lucide-react';
-import { CLINIC } from '@/booking';
+import { CLINIC, doctorName, departmentName } from '@/booking';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { LanguageToggle, useLang } from '@/i18n';
 import './App.css';
@@ -357,7 +357,10 @@ function App() {
               <Stethoscope size={15} className="detail-icon" />
               <div>
                 <span className="detail-label">Doctor:</span>
-                <span className="detail-val">{details.doctor.name} {details.department ? `(${details.department.name})` : ''}</span>
+                <span className="detail-val">
+                  {doctorName(details.doctor.id)}
+                  {details.department ? ` (${departmentName(details.department.id)})` : ''}
+                </span>
               </div>
             </div>
           )}
@@ -773,12 +776,13 @@ function App() {
           <p className="mt-0.5 text-[0.88rem] text-ink-soft">{CLINIC.name}</p>
         </header>
         <div className="min-h-0 flex-1">
-          <BookingWizard 
-            initialOverrides={{ 
-              patientType: bookingView.patientType as any, 
+          <BookingWizard
+            initialOverrides={{
+              patientType: bookingView.patientType,
               name: bookingView.name || '',
-              step: 2 
-            } as any}
+              step: bookingView.patientType === 'new' ? 2 : 1,
+              openVerifyOnMount: bookingView.patientType === 'existing',
+            }}
             onBookingComplete={handleBookingComplete}
           />
         </div>

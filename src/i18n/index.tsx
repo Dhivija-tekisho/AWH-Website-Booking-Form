@@ -172,7 +172,7 @@ export function LanguageToggle() {
 
   return (
     <div
-      className="inline-flex items-center rounded-full border border-line bg-white/80 p-0.5 text-[0.78rem] font-bold shadow-sm"
+      className="inline-flex items-center rounded-full border border-line bg-white/80 p-1 text-[0.78rem] font-bold shadow-sm"
       role="group"
       aria-label={t('lang.switch')}
     >
@@ -186,7 +186,7 @@ export function LanguageToggle() {
             aria-pressed={active}
             title={locale.nativeName}
             className={[
-              'rounded-full px-3 py-1.5 transition-colors',
+              'rounded-full px-3 py-1 transition-colors',
               active ? 'bg-emerald text-ivory' : 'text-ink-soft hover:text-ink',
             ].join(' ')}
           >
@@ -201,7 +201,6 @@ export function LanguageToggle() {
 /** Wizard step ids — labels come from locale `step.<id>`. */
 export const STEP_IDS = [
   'patient',
-  'verify',
   'profile',
   'department',
   'specialist',

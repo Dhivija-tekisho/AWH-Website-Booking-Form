@@ -1,7 +1,6 @@
-import { Sparkles } from 'lucide-react';
 import { DOCTORS, type Department, type Doctor } from '@/booking';
 import { useLang } from '@/i18n';
-import { SelectMark } from './shared';
+import { CARD_GRID, SelectMark, StepHeader } from './shared';
 
 interface Props {
   department: Department | null;
@@ -32,39 +31,45 @@ export function StepSpecialist({
   const doctors = list.length ? list : DOCTORS;
 
   return (
-    <div className="h-full">
-      <h2 className="text-[clamp(1.25rem,2.8vw,1.7rem)] font-semibold text-ink">
-        {existing ? t('spec.title.existing') : t('spec.title.new')}
-      </h2>
-      <p className="mt-1 text-[0.88rem] text-ink-soft">
-        {department && (
+    <div className="flex min-h-full flex-col">
+      <StepHeader
+        title={existing ? t('spec.title.existing') : t('spec.title.new')}
+        subtitle={
           <>
-            {t('spec.for')}{' '}
-            <strong className="text-emerald">{t(`dept.${department.id}.name`)}</strong>.{' '}
+            {department && (
+              <>
+                {t('spec.for')}{' '}
+                <strong className="text-emerald">{t(`dept.${department.id}.name`)}</strong>.{' '}
+              </>
+            )}
+            {existing ? t('spec.subtitle.existing') : t('spec.subtitle.new')}
           </>
-        )}
-        {existing ? t('spec.subtitle.existing') : t('spec.subtitle.new')}
-      </p>
+        }
+      />
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className={`my-auto ${CARD_GRID}`}>
         <button
           type="button"
           onClick={() => onSelect(null)}
           aria-pressed={selectedId === null}
           className={[
-            'flex w-full items-center gap-3 rounded-lg border-2 p-2.5 text-left transition-all',
+            'flex h-full w-full items-center gap-3 rounded-lg border-2 p-4 text-left transition-all',
             selectedId === null
               ? 'border-emerald bg-mist/60 shadow-sm'
               : 'border-line bg-white hover:border-jade/50',
           ].join(' ')}
         >
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-gradient-to-br from-gold to-emerald text-ivory">
-            <Sparkles className="h-4 w-4" />
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gradient-to-br from-emerald-2 to-emerald text-xs font-bold text-ivory">
+            NP
           </span>
           <span className="min-w-0 flex-1">
-            <h4 className="text-[0.92rem] font-semibold text-ink">{t('spec.noPref.name')}</h4>
-            <small className="block text-[0.78rem] text-ink-soft">{t('spec.noPref.desc')}</small>
-            <span className="mt-0.5 inline-block text-[0.72rem] font-semibold text-jade">
+            <h4 className="text-[0.92rem] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
+              {t('spec.noPref.name')}
+            </h4>
+            <small className="block text-[0.76rem] leading-snug text-ink-soft [overflow-wrap:anywhere]">
+              {t('spec.noPref.desc')}
+            </small>
+            <span className="mt-1 inline-block text-[0.72rem] font-semibold leading-snug text-jade [overflow-wrap:anywhere]">
               {existing ? t('spec.noPref.hint.existing') : t('spec.noPref.hint.new')}
             </span>
           </span>
@@ -81,7 +86,7 @@ export function StepSpecialist({
               onClick={() => onSelect(doctor)}
               aria-pressed={selected}
               className={[
-                'flex w-full items-center gap-3 rounded-lg border-2 p-2.5 text-left transition-all',
+                'flex h-full w-full items-center gap-3 rounded-lg border-2 p-4 text-left transition-all',
                 selected
                   ? 'border-emerald bg-mist/60 shadow-sm'
                   : 'border-line bg-white hover:border-jade/50',
@@ -89,7 +94,7 @@ export function StepSpecialist({
             >
               <span
                 className={[
-                  'flex h-9 w-9 flex-none items-center justify-center rounded-full text-xs font-bold text-ivory',
+                  'flex h-10 w-10 flex-none items-center justify-center rounded-full text-xs font-bold text-ivory',
                   doctor.isLead
                     ? 'bg-gradient-to-br from-gold to-emerald'
                     : 'bg-gradient-to-br from-emerald-2 to-emerald',
@@ -98,13 +103,13 @@ export function StepSpecialist({
                 {doctor.initials}
               </span>
               <span className="min-w-0 flex-1">
-                <h4 className="text-[0.92rem] font-semibold leading-snug text-ink">
+                <h4 className="text-[0.92rem] font-semibold leading-snug text-ink [overflow-wrap:anywhere]">
                   {t(`doctor.${doctor.id}.name`)}
                 </h4>
-                <small className="block text-[0.78rem] text-ink-soft">
+                <small className="block text-[0.76rem] leading-snug text-ink-soft [overflow-wrap:anywhere]">
                   {t(`doctor.${doctor.id}.role`)}
                 </small>
-                <span className="mt-0.5 inline-block text-[0.72rem] font-semibold text-jade">
+                <span className="mt-1 inline-block text-[0.72rem] font-semibold leading-snug text-jade [overflow-wrap:anywhere]">
                   {lastVisit
                     ? t('spec.lastVisit')
                     : t('spec.slots', {

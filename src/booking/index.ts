@@ -24,12 +24,24 @@ export const CLINIC = {
   address: 'Saleemnagar, opp. Musharambagh Metro, Hyderabad',
 } as const;
 
+export type PatientType = 'new' | 'existing';
+
 /** Wizard step ids — labels from locale `step.<id>`. */
 export const BOOKING_STEPS = STEP_IDS;
 
 export const TOTAL_STEPS = BOOKING_STEPS.length;
 
-export type PatientType = 'new' | 'existing';
+/**
+ * Both flows share the same step rail. Mobile/OTP lives inside Profile
+ * (new registration or existing patient picker) — no separate Verify step.
+ */
+export function stepsForPatient(_patientType: PatientType | null): readonly string[] {
+  return BOOKING_STEPS;
+}
+
+export function totalStepsFor(patientType: PatientType | null): number {
+  return stepsForPatient(patientType).length;
+}
 
 /** Phone → OTP phases inside the Verify step. */
 export type VerifyPhase = 'phone' | 'otp';
@@ -106,6 +118,16 @@ export interface TimeSlot {
   taken: boolean;
 }
 
+export interface ExistingPatientRecord {
+  patientId: string;
+  name: string;
+  age: string;
+  gender: Gender;
+  locality: string;
+  lastDepartmentId: string;
+  lastDoctorId: string;
+}
+
 export interface BookingState {
   step: number;
   patientType: PatientType | null;
@@ -113,6 +135,8 @@ export interface BookingState {
   otp: string;
   phoneVerified: boolean;
   patientId: string | null;
+  /** Patients found for the verified mobile (existing flow). */
+  matchedPatients: ExistingPatientRecord[];
   /** Demo: last department/doctor for returning patients. */
   lastDepartmentId: string | null;
   lastDoctorId: string | null;
@@ -145,27 +169,52 @@ export type BookingDetails = Pick<
   | 'notes'
 >;
 
-/** Demo lookup — pretends we found a returning patient from the mobile number. */
-export function lookupExistingPatient(phone: string): {
-  name: string;
-  age: string;
-  gender: Gender;
-  locality: string;
-  patientId: string;
-  lastDepartmentId: string;
-  lastDoctorId: string;
-} {
+/**
+ * Demo lookup — several clinic records can share one mobile
+ * (family members). Real API would return the same shape.
+ */
+export function lookupExistingPatients(phone: string): ExistingPatientRecord[] {
   const digits = phone.replace(/\D/g, '');
   const tail = digits.slice(-4) || '0000';
-  return {
-    name: 'Ramesh Kumar',
-    age: '52',
-    gender: 'male',
-    locality: 'Saleemnagar, Hyderabad',
-    patientId: `KVN-${tail}`,
-    lastDepartmentId: 'diabetic',
-    lastDoctorId: 'santosh',
-  };
+  const all: ExistingPatientRecord[] = [
+    {
+      name: 'Ramesh Kumar',
+      age: '52',
+      gender: 'male',
+      locality: 'Saleemnagar, Hyderabad',
+      patientId: `KVN-${tail}`,
+      lastDepartmentId: 'diabetic',
+      lastDoctorId: 'santosh',
+    },
+    {
+      name: 'Lakshmi Devi',
+      age: '48',
+      gender: 'female',
+      locality: 'Saleemnagar, Hyderabad',
+      patientId: `KVN-${tail}-B`,
+      lastDepartmentId: 'advanced',
+      lastDoctorId: 'korada',
+    },
+    {
+      name: 'Arjun Kumar',
+      age: '14',
+      gender: 'male',
+      locality: 'Saleemnagar, Hyderabad',
+      patientId: `KVN-${tail}-C`,
+      lastDepartmentId: 'advanced',
+      lastDoctorId: 'korada',
+    },
+  ];
+  // Demo: numbers ending in 0/1 return a single record (details view);
+  // other numbers return the full family list.
+  const last = Number(digits.slice(-1) || '0');
+  if (last <= 1) return [all[0]!];
+  return all;
+}
+
+/** Single-match helper — returns the primary record for a mobile. */
+export function lookupExistingPatient(phone: string): ExistingPatientRecord {
+  return lookupExistingPatients(phone)[0]!;
 }
 
 export const PATIENT_OPTIONS: {
@@ -199,22 +248,10 @@ export const DOCTORS: Doctor[] = [
     departments: ['chronic', 'general'],
   },
   {
-    id: 'podiatry',
-    initials: 'DF',
+    id: 'korada',
+    initials: 'HK',
     isLead: false,
-    departments: ['diabetic', 'salvage'],
-  },
-  {
-    id: 'hbot',
-    initials: 'HT',
-    isLead: false,
-    departments: ['advanced', 'burns'],
-  },
-  {
-    id: 'nurse',
-    initials: 'RN',
-    isLead: false,
-    departments: ['general', 'chronic', 'burns'],
+    departments: ['diabetic', 'burns', 'chronic', 'advanced', 'general', 'salvage'],
   },
 ];
 
@@ -336,46 +373,27 @@ export function bookingMessage(booking: BookingState): string {
   return lines.join('\n');
 }
 
-function getInitialState(): BookingState {
-  const baseState: BookingState = {
-    step: 1,
-    patientType: null,
-    verifyPhase: 'phone',
-    otp: '',
-    phoneVerified: false,
-    patientId: null,
-    lastDepartmentId: null,
-    lastDoctorId: null,
-    department: null,
-    doctor: null,
-    date: null,
-    slot: null,
-    name: '',
-    phone: '',
-    age: '',
-    gender: '',
-    locality: '',
-    woundDuration: '',
-    visitPurpose: null,
-    notes: '',
-    reference: null,
-  };
-
-  if (typeof window !== 'undefined') {
-    const params = new URLSearchParams(window.location.search);
-    const pType = params.get('patientType');
-    const pName = params.get('name');
-
-    if (pType === 'new' || pType === 'existing') {
-      baseState.patientType = pType;
-      baseState.step = 2; // Jump to verify step
-    }
-    if (pName) {
-      baseState.name = pName;
-    }
-  }
-
-  return baseState;
-}
-
-export const initialBookingState: BookingState = getInitialState();
+export const initialBookingState: BookingState = {
+  step: 1,
+  patientType: null,
+  verifyPhase: 'phone',
+  otp: '',
+  phoneVerified: false,
+  patientId: null,
+  matchedPatients: [],
+  lastDepartmentId: null,
+  lastDoctorId: null,
+  department: null,
+  doctor: null,
+  date: null,
+  slot: null,
+  name: '',
+  phone: '',
+  age: '',
+  gender: '',
+  locality: '',
+  woundDuration: '',
+  visitPurpose: null,
+  notes: '',
+  reference: null,
+};

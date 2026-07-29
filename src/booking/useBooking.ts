@@ -3,14 +3,16 @@ import {
   BOOKING_STEPS,
   DEPARTMENTS,
   DOCTORS,
-  TOTAL_STEPS,
   initialBookingState,
-  lookupExistingPatient,
+  lookupExistingPatients,
   makeReference,
+  stepsForPatient,
+  totalStepsFor,
   type BookingDetails,
   type BookingState,
   type Department,
   type Doctor,
+  type ExistingPatientRecord,
   type PatientType,
 } from './index';
 
@@ -19,6 +21,8 @@ type Action =
   | { type: 'SET_OTP'; payload: string }
   | { type: 'SEND_OTP' }
   | { type: 'VERIFY_OTP' }
+  | { type: 'COMPLETE_EXISTING_VERIFY'; phone: string; otp: string }
+  | { type: 'SELECT_MATCHED_PATIENT'; payload: ExistingPatientRecord }
   | { type: 'SET_DEPARTMENT'; payload: Department }
   | { type: 'SET_DOCTOR'; payload: Doctor | null }
   | { type: 'SET_DATE'; payload: Date }
@@ -29,11 +33,42 @@ type Action =
   | { type: 'CONFIRM'; reference: string }
   | { type: 'RESET' };
 
+function applyMatchedPatient(
+  record: ExistingPatientRecord,
+): Pick<
+  BookingState,
+  | 'patientId'
+  | 'name'
+  | 'age'
+  | 'gender'
+  | 'locality'
+  | 'lastDepartmentId'
+  | 'lastDoctorId'
+  | 'department'
+  | 'doctor'
+> {
+  const department =
+    DEPARTMENTS.find((d) => d.id === record.lastDepartmentId) ?? null;
+  const doctor = DOCTORS.find((d) => d.id === record.lastDoctorId) ?? null;
+  return {
+    patientId: record.patientId,
+    name: record.name,
+    age: record.age,
+    gender: record.gender,
+    locality: record.locality,
+    lastDepartmentId: record.lastDepartmentId,
+    lastDoctorId: record.lastDoctorId,
+    department,
+    doctor,
+  };
+}
+
 function clearProfileFields(): Pick<
   BookingState,
   | 'otp'
   | 'phoneVerified'
   | 'patientId'
+  | 'matchedPatients'
   | 'lastDepartmentId'
   | 'lastDoctorId'
   | 'name'
@@ -46,12 +81,15 @@ function clearProfileFields(): Pick<
   | 'department'
   | 'doctor'
   | 'verifyPhase'
+  | 'phone'
 > {
   return {
     verifyPhase: 'phone',
     otp: '',
+    phone: '',
     phoneVerified: false,
     patientId: null,
+    matchedPatients: [],
     lastDepartmentId: null,
     lastDoctorId: null,
     name: '',
@@ -66,6 +104,42 @@ function clearProfileFields(): Pick<
   };
 }
 
+function stepIdAt(state: BookingState): string | undefined {
+  return stepsForPatient(state.patientType)[state.step - 1];
+}
+
+function validateNewRegistration(state: BookingState): { ok: boolean; messageKey?: string } {
+  if (!state.name.trim()) {
+    return { ok: false, messageKey: 'err.name' };
+  }
+  if (!state.age.trim()) {
+    return { ok: false, messageKey: 'err.age' };
+  }
+  if (!state.gender) {
+    return { ok: false, messageKey: 'err.gender' };
+  }
+  if (state.phone.replace(/\D/g, '').length < 10) {
+    return { ok: false, messageKey: 'err.phone' };
+  }
+  if (state.verifyPhase !== 'otp') {
+    return { ok: false, messageKey: 'err.sendOtpFirst' };
+  }
+  if (!state.otp.trim()) {
+    return { ok: false, messageKey: 'err.otp' };
+  }
+  return { ok: true };
+}
+
+function validateExistingProfile(state: BookingState): { ok: boolean; messageKey?: string } {
+  if (!state.phoneVerified) {
+    return { ok: false, messageKey: 'err.otp' };
+  }
+  if (!state.patientId || state.matchedPatients.length === 0) {
+    return { ok: false, messageKey: 'err.matchedPatient' };
+  }
+  return { ok: true };
+}
+
 function reducer(state: BookingState, action: Action): BookingState {
   switch (action.type) {
     case 'SET_PATIENT':
@@ -78,46 +152,40 @@ function reducer(state: BookingState, action: Action): BookingState {
       return { ...state, otp: action.payload };
     case 'SEND_OTP':
       return { ...state, verifyPhase: 'otp', otp: '', phoneVerified: false };
-    case 'VERIFY_OTP': {
-      if (state.patientType === 'existing') {
-        const found = lookupExistingPatient(state.phone);
-        const department =
-          DEPARTMENTS.find((d) => d.id === found.lastDepartmentId) ?? null;
-        const doctor = DOCTORS.find((d) => d.id === found.lastDoctorId) ?? null;
+    case 'VERIFY_OTP':
+      if (state.patientType === 'new') {
         return {
           ...state,
           phoneVerified: true,
-          patientId: found.patientId,
-          name: found.name,
-          age: found.age,
-          gender: found.gender,
-          locality: found.locality,
-          lastDepartmentId: found.lastDepartmentId,
-          lastDoctorId: found.lastDoctorId,
-          department,
-          doctor,
-          woundDuration: '',
-          visitPurpose: null,
-          notes: '',
+          patientId: null,
+          matchedPatients: [],
+          lastDepartmentId: null,
+          lastDoctorId: null,
         };
       }
+      return { ...state, phoneVerified: true };
+    case 'COMPLETE_EXISTING_VERIFY': {
+      const matched = lookupExistingPatients(action.phone);
+      const primary = matched[0]!;
       return {
-        ...state,
+        ...initialBookingState,
+        step: 2,
+        patientType: 'existing',
+        phone: action.phone,
+        otp: action.otp,
+        verifyPhase: 'otp',
         phoneVerified: true,
-        patientId: null,
-        lastDepartmentId: null,
-        lastDoctorId: null,
-        name: '',
-        age: '',
-        gender: '',
-        locality: '',
-        woundDuration: '',
-        visitPurpose: null,
-        notes: '',
-        department: null,
-        doctor: null,
+        matchedPatients: matched,
+        ...applyMatchedPatient(primary),
       };
     }
+    case 'SELECT_MATCHED_PATIENT':
+      return {
+        ...state,
+        ...applyMatchedPatient(action.payload),
+        visitPurpose: null,
+        notes: '',
+      };
     case 'SET_DEPARTMENT': {
       const doctorStillValid =
         state.doctor && state.doctor.departments.includes(action.payload.id);
@@ -133,26 +201,31 @@ function reducer(state: BookingState, action: Action): BookingState {
       return { ...state, date: action.payload, slot: null };
     case 'SET_SLOT':
       return { ...state, slot: action.payload };
-    case 'PATCH_DETAILS':
-      return { ...state, ...action.payload };
-    case 'NEXT':
-      return { ...state, step: Math.min(state.step + 1, TOTAL_STEPS + 1) };
-    case 'BACK': {
-      if (state.step === 3) {
+    case 'PATCH_DETAILS': {
+      const phoneChanged =
+        action.payload.phone !== undefined && action.payload.phone !== state.phone;
+      if (phoneChanged) {
         return {
           ...state,
-          step: 2,
+          ...action.payload,
+          verifyPhase: 'phone',
+          otp: '',
           phoneVerified: false,
-          verifyPhase: state.phone ? 'otp' : 'phone',
+          matchedPatients: [],
         };
       }
-      if (state.step === 2 && state.verifyPhase === 'otp') {
-        return { ...state, verifyPhase: 'phone', otp: '', phoneVerified: false };
-      }
-      return { ...state, step: Math.max(state.step - 1, 1) };
+      return { ...state, ...action.payload };
     }
-    case 'CONFIRM':
-      return { ...state, reference: action.reference, step: TOTAL_STEPS + 1 };
+    case 'NEXT': {
+      const total = totalStepsFor(state.patientType);
+      return { ...state, step: Math.min(state.step + 1, total + 1) };
+    }
+    case 'BACK':
+      return { ...state, step: Math.max(state.step - 1, 1) };
+    case 'CONFIRM': {
+      const total = totalStepsFor(state.patientType);
+      return { ...state, reference: action.reference, step: total + 1 };
+    }
     case 'RESET':
       return { ...initialBookingState };
     default:
@@ -161,77 +234,54 @@ function reducer(state: BookingState, action: Action): BookingState {
 }
 
 export function useBooking(initialOverrides?: Partial<BookingState>) {
-  const [state, dispatch] = useReducer(reducer, { ...initialBookingState, ...initialOverrides });
+  const [state, dispatch] = useReducer(
+    reducer,
+    initialOverrides ? { ...initialBookingState, ...initialOverrides } : initialBookingState,
+  );
 
   const validate = useCallback((): { ok: boolean; messageKey?: string } => {
     if (state.step === 1 && !state.patientType) {
       return { ok: false, messageKey: 'err.patientType' };
     }
-    if (state.step === 2) {
-      if (state.verifyPhase === 'phone') {
-        if (state.phone.replace(/\D/g, '').length < 10) {
-          return { ok: false, messageKey: 'err.phone' };
-        }
-      } else if (!state.otp.trim()) {
-        return { ok: false, messageKey: 'err.otp' };
-      }
+
+    const id = stepIdAt(state);
+
+    if (id === 'profile' && state.patientType === 'new') {
+      return validateNewRegistration(state);
     }
-    if (state.step === 3) {
-      if (state.patientType === 'existing') {
-        if (!state.visitPurpose) {
-          return { ok: false, messageKey: 'err.visitPurpose' };
-        }
-        if (state.visitPurpose === 'new-concern' && !state.notes.trim()) {
-          return { ok: false, messageKey: 'err.newConcern' };
-        }
-      } else {
-        if (!state.name.trim()) {
-          return { ok: false, messageKey: 'err.name' };
-        }
-        if (!state.age.trim()) {
-          return { ok: false, messageKey: 'err.age' };
-        }
-        if (!state.gender) {
-          return { ok: false, messageKey: 'err.gender' };
-        }
-        if (!state.locality.trim()) {
-          return { ok: false, messageKey: 'err.locality' };
-        }
-        if (!state.woundDuration) {
-          return { ok: false, messageKey: 'err.woundDuration' };
-        }
-        if (!state.notes.trim()) {
-          return { ok: false, messageKey: 'err.notes' };
-        }
-      }
+    if (id === 'profile' && state.patientType === 'existing') {
+      return validateExistingProfile(state);
     }
-    if (state.step === 4 && !state.department) {
+    if (id === 'department' && !state.department) {
       return { ok: false, messageKey: 'err.department' };
     }
-    if (state.step === 6 && !state.slot) {
+    if (id === 'datetime' && !state.slot) {
       return { ok: false, messageKey: 'err.slot' };
     }
     return { ok: true };
   }, [state]);
 
   const next = useCallback(() => {
-    if (state.step === 2 && state.verifyPhase === 'phone') {
-      dispatch({ type: 'SEND_OTP' });
-      return;
-    }
-    if (state.step === 2 && state.verifyPhase === 'otp') {
+    const id = stepIdAt(state);
+    if (id === 'profile' && state.patientType === 'new') {
       dispatch({ type: 'VERIFY_OTP' });
       dispatch({ type: 'NEXT' });
       return;
     }
     dispatch({ type: 'NEXT' });
-  }, [state.step, state.verifyPhase]);
+  }, [state]);
 
   return {
     state,
     steps: BOOKING_STEPS,
+    stepId: stepIdAt(state),
     setPatientType: (payload: PatientType) => dispatch({ type: 'SET_PATIENT', payload }),
     setOtp: (payload: string) => dispatch({ type: 'SET_OTP', payload }),
+    sendOtp: () => dispatch({ type: 'SEND_OTP' }),
+    completeExistingVerify: (phone: string, otp: string) =>
+      dispatch({ type: 'COMPLETE_EXISTING_VERIFY', phone, otp }),
+    selectMatchedPatient: (payload: ExistingPatientRecord) =>
+      dispatch({ type: 'SELECT_MATCHED_PATIENT', payload }),
     setDepartment: (payload: Department) => dispatch({ type: 'SET_DEPARTMENT', payload }),
     setDoctor: (payload: Doctor | null) => dispatch({ type: 'SET_DOCTOR', payload }),
     setDate: (payload: Date) => dispatch({ type: 'SET_DATE', payload }),
