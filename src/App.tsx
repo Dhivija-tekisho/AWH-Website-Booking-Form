@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode, ChangeEvent } from 'react';
-import { MessageCircle, Mic, Send, X, Volume2, VolumeX, Globe, ChevronDown, ChevronsRight, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, AlertCircle, FileText } from 'lucide-react';
+import { MessageCircle, Mic, Send, X, Volume2, VolumeX, Globe, ChevronDown, ChevronsRight, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText } from 'lucide-react';
 import { CLINIC } from '@/booking';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { LanguageToggle, useLang } from '@/i18n';
