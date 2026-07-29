@@ -77,14 +77,20 @@
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background-image: 
-    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
-    radial-gradient(circle at 30% 80%, rgba(255,255,255,0.2) 2px, transparent 2px),
-    radial-gradient(circle at 70% 30%, rgba(255,255,255,0.15) 1.5px, transparent 1.5px),
-    radial-gradient(circle at 80% 90%, rgba(255,255,255,0.1) 1px, transparent 1px),
-    radial-gradient(circle at 90% 10%, rgba(255,255,255,0.2) 1.5px, transparent 1.5px),
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 150px 150px;
+    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.15) 1.5px, transparent 2px),
+    radial-gradient(circle at 30% 80%, rgba(255,255,255,0.25) 2.5px, transparent 3.5px),
+    radial-gradient(circle at 70% 30%, rgba(255,255,255,0.2) 2px, transparent 3px),
+    radial-gradient(circle at 80% 90%, rgba(255,255,255,0.15) 1.5px, transparent 2.5px),
+    radial-gradient(circle at 90% 10%, rgba(255,255,255,0.2) 2px, transparent 3px),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 1px, transparent 2px);
+  background-size: 100px 100px, 150px 150px, 120px 120px, 180px 180px, 140px 140px, 200px 200px;
   pointer-events: none;
+  animation: driftStars 40s linear infinite;
+}
+
+@keyframes driftStars {
+  from { background-position: 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px, 0px 0px; }
+  to { background-position: 0px -100px, 0px -150px, 0px -120px, 0px -180px, 0px -140px, 0px -200px; }
 }
 
 .chat-header-content {
@@ -104,18 +110,36 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  animation: spinOrbit 12s linear infinite;
 }
 
-.header-avatar-orbit::before {
+@keyframes spinOrbit {
+  to { transform: rotate(360deg); }
+}
+
+.header-avatar-orbit::before,
+.header-avatar-orbit::after {
   content: '';
   position: absolute;
-  top: 1px;
-  right: 1px;
-  width: 3.5px;
-  height: 3.5px;
-  background-color: #ffffff;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
   border-radius: 50%;
-  box-shadow: 0 0 4px #ffffff;
+  border: 1.5px solid rgba(244, 220, 166, 0.4);
+  animation: ripple 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.header-avatar-orbit::after {
+  animation-delay: 1.5s;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
 .header-avatar-orb {
@@ -124,6 +148,21 @@
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f4dca6 35%, #c8a165 70%, #4a866d 100%);
   box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(244, 220, 166, 0.5);
+  animation: orbEffects 12s linear infinite;
+}
+
+@keyframes orbEffects {
+  0% { 
+    transform: rotate(0deg); 
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(244, 220, 166, 0.5);
+  }
+  50% { 
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 16px rgba(244, 220, 166, 1);
+  }
+  100% { 
+    transform: rotate(-360deg); 
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(244, 220, 166, 0.5);
+  }
 }
 
 .header-title {
@@ -269,14 +308,19 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background-color: #8fb19e;
-  color: var(--color-text-white);
+  background: radial-gradient(circle at 30% 30%, #3b8b69 0%, var(--color-primary) 60%, #0c2b21 100%);
+  box-shadow: 
+    inset 1px 1px 3px rgba(255, 255, 255, 0.4), 
+    inset -2px -2px 4px rgba(0, 0, 0, 0.5),
+    0 2px 6px rgba(20, 61, 47, 0.25);
+  color: #f4dca6; /* Match the golden theme */
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 14px;
   flex-shrink: 0;
+  border: 1px solid rgba(244, 220, 166, 0.2);
 }
 
 .message-content {

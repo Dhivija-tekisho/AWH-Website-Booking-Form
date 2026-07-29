@@ -852,7 +852,11 @@ function App() {
           <div className="chat-messages">
             {messages.map((msg) => (
               <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'user-message' : ''}`}>
-                {msg.role === 'bot' && <div className="message-avatar">A</div>}
+                {msg.role === 'bot' && (
+                  <div className="message-avatar">
+                    <Stethoscope size={18} />
+                  </div>
+                )}
                 <div className="message-content">
                   <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : ''}`}>
                     {msg.content}
