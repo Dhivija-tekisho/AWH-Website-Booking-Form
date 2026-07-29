@@ -15,6 +15,7 @@ interface Translations {
   bookAppointment: string;
   askNameIntro: ReactNode;
   askAiQuestion: string;
+  aiResponse: string;
   suggestionPills: string[];
   inputPlaceholder: string;
   stepPrompts: {
@@ -56,6 +57,7 @@ const translations: Record<Language, Translations> = {
       </div>
     ),
     askAiQuestion: '💬 Ask AI Specialist a Question',
+    aiResponse: "Thank you for asking Asha AI Specialist. For non-healing wounds or diabetic foot concerns, hyperbaric oxygen therapy (HBOT) and specialized vascular assessment are highly recommended. Would you like to book an appointment with our specialist?",
     suggestionPills: [
       "Diabetic Foot Care",
       "Non-Healing Wounds & Ulcers",
@@ -116,6 +118,7 @@ const translations: Record<Language, Translations> = {
       </div>
     ),
     askAiQuestion: '💬 AI विशेषज्ञ से प्रश्न पूछें',
+    aiResponse: "आशा AI विशेषज्ञ से पूछने के लिए धन्यवाद। न भरने वाले घावों या डायबिटीज पैर की समस्याओं के लिए, हाइपरबेरिक ऑक्सीजन थेरेपी (HBOT) और संवहनी मूल्यांकन (vascular assessment) की अत्यधिक सिफारिश की जाती है। क्या आप हमारे विशेषज्ञ के साथ अपॉइंटमेंट बुक करना चाहेंगे?",
     suggestionPills: [
       "डायबिटीज पैर की देखभाल",
       "न भरने वाले घाव व अल्सर",
@@ -176,6 +179,7 @@ const translations: Record<Language, Translations> = {
       </div>
     ),
     askAiQuestion: '💬 AI స్పెషలిస్ట్‌ని ప్రశ్నించండి',
+    aiResponse: "ఆశా AI స్పెషలిస్ట్‌ని అడిగినందుకు ధన్యవాదాలు. మానని గాయాలు లేదా డయాబెటిక్ ఫుట్ సమస్యల కోసం, హైపర్‌బారిక్ ఆక్సిజన్ థెరపీ (HBOT) మరియు వాస్కులర్ మూల్యాంకనం ఎంతగానో సిఫార్సు చేయబడ్డాయి. మీరు మా నిపుణుడితో అపాయింట్‌మెంట్ బుక్ చేసుకోవాలనుకుంటున్నారా?",
     suggestionPills: [
       "డయాబెటిక్ ఫుట్ కేర్",
       "మానని గాయాలు & అల్సర్లు",
@@ -653,14 +657,14 @@ function App() {
       // Check if user clicked or typed a category or question
       addMessage('user', trimmed);
       const lower = trimmed.toLowerCase();
-      if (lower.includes('book') || lower.includes('appointment')) {
+      if (lower.includes('book') || lower.includes('appointment') || lower.includes('बुक') || lower.includes('अपॉइंटमेंट') || lower.includes('అపాయింట్‌మెంట్')) {
         handleStepSelectCategory();
       } else {
         // AI Specialist mock response
         setTimeout(() => {
           addMessage('bot', (
             <div>
-              <p>Thank you for asking Asha AI Specialist. For non-healing wounds or diabetic foot concerns, hyperbaric oxygen therapy (HBOT) and specialized vascular assessment are highly recommended. Would you like to book an appointment with our specialist?</p>
+              <p>{t.aiResponse}</p>
               <div className="action-buttons mt-3">
                 <button className="btn-primary" onClick={() => handleStepSelectCategory()}>{t.bookAppointment}</button>
               </div>
