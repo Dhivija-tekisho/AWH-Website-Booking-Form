@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode, ChangeEvent } from 'react';
-import { MessageCircle, Mic, Send, X, Volume2, VolumeX, Globe, ChevronDown, ChevronsRight, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText } from 'lucide-react';
+import { MessageCircle, Mic, Send, X, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText } from 'lucide-react';
 import { CLINIC, doctorName, departmentName } from '@/booking';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { LanguageToggle, useLang } from '@/i18n';
@@ -9,7 +9,7 @@ import { knowledgeBase } from './kb';
 import './App.css';
 
 // Hardcoded API key to bypass dev server restart
-const apiKey = "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";
+const apiKey = "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" as string;
 let openai: OpenAI | null = null;
 if (apiKey && apiKey !== 'your_openai_api_key_here') {
   openai = new OpenAI({ 
@@ -253,8 +253,8 @@ interface Message {
   actionButtons?: ReactNode;
 }
 
-// 8-Step AWH WhatsApp Appointment Booking Workflow Steps
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+// 13-Step AWH WhatsApp Appointment Booking Workflow Steps
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
 
 interface BookingData {
   category: string;
@@ -291,47 +291,11 @@ function App() {
   
   const [bookingView, setBookingView] = useState<{ active: boolean; patientType?: 'new'|'existing'; name?: string }>({ active: false });
   const chatBodyRef = useRef<HTMLDivElement>(null);
-  const pillsRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { t: i18nT, setLang: setGlobalLang } = useLang();
   const t = translations[language];
 
-  const [isDraggingPills, setIsDraggingPills] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragScrollLeft, setDragScrollLeft] = useState(0);
-
-  const scrollPillsRight = () => {
-    if (pillsRef.current) {
-      pillsRef.current.scrollBy({ left: 180, behavior: 'smooth' });
-    }
-  };
-
-  // Horizontal scroll & drag helpers for pills track
-  const handlePillsWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (pillsRef.current && e.deltaY !== 0) {
-      pillsRef.current.scrollLeft += e.deltaY;
-    }
-  };
-
-  const handlePillsMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!pillsRef.current) return;
-    setIsDraggingPills(true);
-    setDragStartX(e.pageX - pillsRef.current.offsetLeft);
-    setDragScrollLeft(pillsRef.current.scrollLeft);
-  };
-
-  const handlePillsMouseUpOrLeave = () => {
-    setIsDraggingPills(false);
-  };
-
-  const handlePillsMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDraggingPills || !pillsRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - pillsRef.current.offsetLeft;
-    const walk = (x - dragStartX) * 1.5;
-    pillsRef.current.scrollLeft = dragScrollLeft - walk;
-  };
 
   // Auto-scroll chat body to bottom when messages update
   useEffect(() => {
