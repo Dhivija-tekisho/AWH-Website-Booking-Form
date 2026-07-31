@@ -37,9 +37,9 @@
   position: fixed;
   bottom: 100px;
   right: 32px;
-  width: 360px;
-  max-width: calc(100vw - 64px);
-  height: 720px;
+  width: 800px;
+  max-width: 95vw;
+  height: 650px;
   max-height: calc(100vh - 132px);
   background-color: var(--color-bg-white);
   border-radius: var(--radius-xl);
@@ -308,19 +308,14 @@
   width: 32px;
   height: 32px;
   border-radius: var(--radius-full);
-  background: radial-gradient(circle at 30% 30%, #3b8b69 0%, var(--color-primary) 60%, #0c2b21 100%);
-  box-shadow: 
-    inset 1px 1px 3px rgba(255, 255, 255, 0.4), 
-    inset -2px -2px 4px rgba(0, 0, 0, 0.5),
-    0 2px 6px rgba(20, 61, 47, 0.25);
-  color: #f4dca6; /* Match the golden theme */
+  background: #a3c9b3;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 16px;
   flex-shrink: 0;
-  border: 1px solid rgba(244, 220, 166, 0.2);
 }
 
 .message-content {
@@ -377,6 +372,47 @@
 
 .btn-secondary:hover {
   background-color: #d6ebd9;
+}
+
+.btn-whatsapp {
+  background-color: #25d366;
+  color: #ffffff;
+  padding: 10px 16px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.btn-whatsapp:hover {
+  background-color: #20ba59;
+  transform: translateY(-1px);
+}
+
+.status-ready {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #4ade80;
+  border-radius: 50%;
+  box-shadow: 0 0 4px #4ade80;
 }
 
 /* 8-Step Interactive Components */
@@ -574,71 +610,16 @@
 }
 
 .suggestion-pills-container {
-  flex-shrink: 0;
-  position: relative;
   width: 100%;
-  display: flex;
-  align-items: center;
-  background-color: var(--color-bg-chat);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  z-index: 5;
-}
-
-.suggestion-pills-wrapper {
-  flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 8px 36px 8px 16px;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
-  -webkit-overflow-scrolling: touch;
-  mask-image: linear-gradient(to right, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-  user-select: none;
-}
-
-.suggestion-pills-wrapper::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
-
-.pills-scroll-right-hint {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(4px);
-  border: 1.5px dashed rgba(20, 61, 47, 0.55);
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: -4px 0 10px rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  z-index: 10;
-  padding: 0;
-}
-
-.pills-scroll-right-hint:hover {
-  background: var(--color-primary);
-  color: #ffffff;
-  border-style: solid;
-  transform: translateY(-50%) scale(1.1);
-}
-
-.pills-scroll-right-hint:active {
-  transform: translateY(-50%) scale(0.95);
+  padding: 10px 16px 10px 44px;
+  margin-top: auto;
 }
 
 .suggestion-pills-track {
   display: flex;
-  gap: 8px;
-  width: max-content;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
 }
 
 .pill {
@@ -646,14 +627,14 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(180deg, #ffffff 0%, #f2f8f4 100%);
-  color: var(--color-primary);
+  background: #ffffff;
+  color: var(--color-text-main);
   padding: 9px 16px;
-  border-radius: 8px;
+  border-radius: 20px;
   font-size: 13.5px;
   font-weight: 600;
-  border: 1.5px solid var(--color-primary);
-  box-shadow: 0 2px 6px rgba(20, 61, 47, 0.14), inset 0 1px 0 #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   user-select: none;
@@ -686,7 +667,68 @@
 .chat-footer {
   background-color: var(--color-bg-white);
   padding: 10px 16px 12px 16px;
-  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.voice-toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-toggle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.voice-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.voice-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.voice-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e5e7eb;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.voice-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+input:checked + .voice-slider {
+  background-color: #d2ab72; /* Golden/yellow toggle color */
+}
+
+input:checked + .voice-slider:before {
+  transform: translateX(20px);
 }
 
 .footer-bottom {
@@ -801,5 +843,36 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+
+.mobile-close-btn { display: none; }
+
+@media (max-width: 768px) {
+  .chat-widget-container {
+    bottom: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+  }
+  .fab-button.mobile-hidden {
+    display: none !important;
+  }
+  .mobile-close-btn {
+    display: flex;
+  }
+  .suggestion-pills-track {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pill {
+    width: 100%;
+    justify-content: center;
   }
 }
