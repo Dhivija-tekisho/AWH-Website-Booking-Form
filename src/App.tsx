@@ -58,7 +58,7 @@ const translations: Record<Language, Translations> = {
     subtitle: 'Care Companion · always here for you',
     welcomeMessage: (
       <div>
-        <p>Namaste, and welcome. 🙏 I’m <strong>Asha</strong>, your care companion at KVNN’s Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
+        <p>Namaste! 🙏 I'm <strong>Asha</strong>, your care companion at KVNN.You can ask me about a wound, our treatments, booking a visit .How can I help you today?</p>
       </div>
     ),
     bookAppointment: 'Book appointment',
@@ -639,6 +639,8 @@ You must strictly follow the rules, facts, and constraints provided in the Knowl
 Do not hardcode any information outside the knowledge base, and ensure all appointment details follow the documented hospital workflow.
 If asked something not covered, follow the Human Handoff rules. Never provide diagnosis, treatment advice, dosing, or medical opinion.
 
+CRITICAL INSTRUCTION FOR TONE & EMPATHY: Whenever a user mentions ANY medical condition, treatment category (like 'Diabetic Foot Care', 'Trauma', 'Burn Injuries', 'Ulcers'), or expresses pain/discomfort, you MUST ALWAYS start your response with a highly empathetic and caring sentence (e.g., "I am so sorry you are dealing with this," or "That sounds very difficult, but you are in the right place.") before providing any clinical facts. NEVER give a purely factual response to a medical concern without first showing sympathy.
+
 CRITICAL INSTRUCTION: You MUST respond to the user in the language of the application UI which is currently set to: ${languageLabels[language]}. If the user types in ${languageLabels[language]}, reply in ${languageLabels[language]}.
 
 Knowledge Base:
@@ -801,8 +803,8 @@ Output strictly in JSON format matching this schema:
 
   if (bookingView.active) {
     return (
-      <main className="mx-auto flex h-dvh max-w-3xl flex-col overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
-        <header className="relative mb-3 flex-none text-center sm:mb-4">
+      <main className="mx-auto flex min-h-dvh sm:min-h-[85vh] sm:max-h-[90vh] sm:my-6 max-w-3xl flex-col overflow-y-auto overflow-x-hidden sm:overflow-hidden px-0 py-0 sm:px-6 sm:py-6 bg-white sm:rounded-2xl sm:shadow-2xl sm:border sm:border-emerald/10">
+        <header className="relative mb-3 flex-none text-center sm:mb-4 px-3 pt-3 sm:px-0 sm:pt-0">
           <div className="absolute left-0 top-0">
             <button 
               onClick={() => setBookingView({ active: false })}
@@ -822,7 +824,7 @@ Output strictly in JSON format matching this schema:
           </h1>
           <p className="mt-0.5 text-[0.88rem] text-ink-soft">{CLINIC.name}</p>
         </header>
-        <div className="min-h-0 flex-1">
+        <div className="min-h-0 flex-1 px-3 pb-3 sm:px-0 sm:pb-0">
           <BookingWizard
             initialOverrides={{
               patientType: bookingView.patientType,

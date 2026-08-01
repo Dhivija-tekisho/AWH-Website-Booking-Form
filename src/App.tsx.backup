@@ -44,7 +44,7 @@ const translations: Record<Language, Translations> = {
     subtitle: 'Care Companion · always here for you',
     welcomeMessage: (
       <div>
-        <p>Namaste, and welcome. 🙏 I’m <strong>Asha</strong>, your care companion at KVNN’s Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
+        <p>Namaste🙏 I’m <strong>Asha</strong>, your care companion at KVNN’s Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
       </div>
     ),
     bookAppointment: 'Book appointment',
