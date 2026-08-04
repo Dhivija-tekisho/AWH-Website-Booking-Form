@@ -1,5 +1,14 @@
+html, body, #root {
+  height: 100%;
+  max-height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
 .app-container {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -68,6 +77,7 @@
 /* Header */
 .chat-header {
   background-color: var(--color-primary);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 40%);
   padding: 10px 16px;
   display: flex;
   align-items: center;
@@ -92,7 +102,7 @@
     radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1) 1px, transparent 2px);
   background-size: 100px 100px, 150px 150px, 120px 120px, 180px 180px, 140px 140px, 200px 200px;
   pointer-events: none;
-  animation: driftStars 40s linear infinite;
+  animation: driftStars 20s linear infinite;
 }
 
 @keyframes driftStars {
@@ -109,66 +119,46 @@
 
 .header-avatar-orbit {
   position: relative;
-  width: 34px;
-  height: 34px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  border: 1.2px dashed rgba(212, 175, 122, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  animation: spinOrbit 12s linear infinite;
+  background: radial-gradient(circle at center, rgba(46, 150, 107, 0.8) 0%, rgba(46, 150, 107, 0.5) 45%, transparent 75%);
+}
+
+.header-avatar-orbit::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(212, 175, 122, 0.7);
+  animation: spinOrbit 24s linear infinite;
 }
 
 @keyframes spinOrbit {
   to { transform: rotate(360deg); }
 }
 
-.header-avatar-orbit::before,
-.header-avatar-orbit::after {
-  content: '';
-  position: absolute;
-  top: -2px; left: -2px; right: -2px; bottom: -2px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(244, 220, 166, 0.4);
-  animation: ripple 3s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-}
-
-.header-avatar-orbit::after {
-  animation-delay: 1.5s;
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(1);
-    opacity: 0.8;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-}
-
 .header-avatar-orb {
-  width: 23px;
-  height: 23px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f4dca6 35%, #c8a165 70%, #4a866d 100%);
-  box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(244, 220, 166, 0.5);
-  animation: orbEffects 12s linear infinite;
+  background: radial-gradient(circle at 30% 30%, #fff7d6 0%, #e8c690 45%, #cca16b 70%, #7ea894 100%);
+  animation: orbEffects 4s ease-in-out infinite;
 }
 
 @keyframes orbEffects {
   0% { 
-    transform: rotate(0deg); 
-    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(244, 220, 166, 0.5);
+    box-shadow: 0 0 6px rgba(232, 198, 144, 0.4);
   }
   50% { 
-    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 16px rgba(244, 220, 166, 1);
+    box-shadow: 0 0 12px rgba(232, 198, 144, 0.8);
   }
   100% { 
-    transform: rotate(-360deg); 
-    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, 0.25), inset 2px 2px 4px rgba(255, 255, 255, 0.8), 0 0 8px rgba(244, 220, 166, 0.5);
+    box-shadow: 0 0 6px rgba(232, 198, 144, 0.4);
   }
 }
 
@@ -312,17 +302,18 @@
 }
 
 .message-avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-full);
-  background: #a3c9b3;
+  background: radial-gradient(circle at 30% 30%, #e6bb80 0%, #95b69c 45%, #56987f 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 16px;
   flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .message-content {
@@ -626,7 +617,7 @@
 .suggestion-pills-track {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -671,13 +662,12 @@
   box-shadow: 0 2px 6px rgba(20, 61, 47, 0.15);
 }
 
-/* Separate White Footer */
 .chat-footer {
   background-color: var(--color-bg-white);
-  padding: 10px 16px 12px 16px;
+  padding: 8px 16px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
 }
 
 .voice-toggle-row {
@@ -815,9 +805,6 @@ input:checked + .voice-slider:before {
 }
 
 /* User Messages */
-.user-message {
-  flex-direction: row-reverse;
-}
 
 .user-bubble {
   background: linear-gradient(135deg, var(--color-primary), #135c50);

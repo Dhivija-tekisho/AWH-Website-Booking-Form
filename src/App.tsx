@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode, ChangeEvent } from 'react';
-import { MessageCircle, Mic, Send, X, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText } from 'lucide-react';
+import { MessageCircle, Mic, Send, X, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText, ArrowLeft, Activity, AlertCircle, Wind } from 'lucide-react';
 import { CLINIC, doctorName, departmentName } from '@/booking';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { LanguageToggle, useLang } from '@/i18n';
@@ -58,7 +58,7 @@ const translations: Record<Language, Translations> = {
     subtitle: 'Care Companion · always here for you',
     welcomeMessage: (
       <div>
-        <p>Namaste! 🙏 I'm <strong>Asha</strong>, your care companion at KVNN.You can ask me about a wound, our treatments, booking a visit .How can I help you today?</p>
+        <p>Namaste, and welcome. 🙏 I'm <strong>Asha</strong>, your care companion at KVNN's Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
       </div>
     ),
     bookAppointment: 'Book appointment',
@@ -71,14 +71,14 @@ const translations: Record<Language, Translations> = {
     askAiQuestion: '💬 Ask AI Specialist a Question',
     aiResponse: "Thank you for asking Asha AI Specialist. For non-healing wounds or diabetic foot concerns, hyperbaric oxygen therapy (HBOT) and specialized vascular assessment are highly recommended. Would you like to book an appointment with our specialist?",
     suggestionPills: [
-      "Diabetic Foot Care",
-      "Non-Healing Wounds & Ulcers",
-      "Burn Injuries",
-      "Leg Pain & Swelling",
-      "Trauma & Injuries",
-      "Other Conditions"
+      "My wound isn't healing",
+      "Diabetic foot care",
+      "Told I might lose my leg",
+      "What is HBOT?",
+      "Book an appointment",
+      "Where are you located?"
     ],
-    inputPlaceholder: 'Type your response...',
+    inputPlaceholder: 'Type your question..',
     stepPrompts: {
       selectCategory: "Please select the treatment category that best matches your medical condition:",
       uploadImage: "To help our specialists perform an initial assessment before your consultation, please upload a clear image of the wound (or select an option below):",
@@ -268,7 +268,7 @@ interface BookingData {
 }
 
 function App() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [language, setLanguage] = useState<Language>('en');
@@ -397,7 +397,13 @@ function App() {
       role: 'bot',
       content: t.welcomeMessage,
       actionButtons: (
-        <button className="btn-primary" onClick={() => handleSend(t.bookAppointment, true)}>{t.bookAppointment}</button>
+        <div className="flex gap-2 flex-wrap">
+          <button className="btn-primary !bg-[#113227] hover:!bg-[#043b2d]" onClick={() => handleSend(t.bookAppointment, true)}>{t.bookAppointment}</button>
+          <button className="btn-whatsapp !bg-[#1da851] !hover:bg-[#158940] flex items-center justify-center gap-1.5" onClick={() => window.open('https://wa.me/1234567890', '_blank')}>
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            Chat on WhatsApp
+          </button>
+        </div>
       )
     }]);
   };
@@ -801,6 +807,21 @@ Output strictly in JSON format matching this schema:
     ));
   };
 
+  const getPillIcon = (text: string) => {
+    const t = text.toLowerCase();
+    const iconCls = "text-[#c4a974] shrink-0";
+    if (t.includes('healing') || t.includes('घाव')) return <Activity size={16} className={iconCls} />;
+    if (t.includes('diabetic') || t.includes('डायबिटीज')) return <Stethoscope size={16} className={iconCls} />;
+    if (t.includes('leg') || t.includes('पैर')) return <AlertCircle size={16} className={iconCls} />;
+    if (t.includes('hbot')) return <Wind size={16} className={iconCls} />;
+    if (t.includes('appointment')) return <Calendar size={16} className={iconCls} />;
+    if (t.includes('located') || t.includes('location')) return <MapPin size={16} className={iconCls} />;
+    if (t.includes('burn') || t.includes('जलने')) return <Activity size={16} className={iconCls} />;
+    if (t.includes('trauma') || t.includes('चोट')) return <Activity size={16} className={iconCls} />;
+    if (t.includes('upload') || t.includes('फोटो')) return <Upload size={16} className={iconCls} />;
+    return <CheckCircle2 size={16} className={iconCls} />;
+  };
+
   if (bookingView.active) {
     return (
       <main className="mx-auto flex min-h-dvh sm:min-h-[85vh] sm:max-h-[90vh] sm:my-6 max-w-3xl flex-col overflow-y-auto overflow-x-hidden sm:overflow-hidden px-0 py-0 sm:px-6 sm:py-6 bg-white sm:rounded-2xl sm:shadow-2xl sm:border sm:border-emerald/10">
@@ -840,164 +861,254 @@ Output strictly in JSON format matching this schema:
   }
 
   return (
-    <div className="app-container">
-      {/* Background content */}
-      <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', opacity: 0.5 }}>
-        <h1>AWH Website Booking Form</h1>
-        <p>This is a placeholder for the main application. Click the chat widget to start the booking flow.</p>
-      </div>
-
-      {/* Chat Widget Container */}
-      <div className={`chat-widget-container ${isOpen ? 'animate-slide-up' : 'hidden'}`}>
-        
-        {/* Header */}
-        <div className="chat-header">
-          <div className="chat-header-content">
-            <div className="header-avatar-orbit">
-              <div className="header-avatar-orb"></div>
-            </div>
-            <span className="header-title">Asha</span>
+    <div className="h-[100dvh] md:min-h-screen flex flex-col bg-[#fcfaf5] font-sans selection:bg-[#cca66a] selection:text-white">
+      {/* Top Banner */}
+      <div className="hidden md:flex bg-[#043b2d] text-white text-xs py-2 px-[5%] justify-between items-center z-20 relative">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+            <span>Open now</span>
           </div>
-          <div className="header-actions">
-            <div className="lang-dropdown-container">
-              <button 
-                className="header-action-btn lang-btn" 
-                onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} 
-                aria-label="Select language"
-                title="Change language"
-              >
-                <Globe size={12} />
-                <span className="lang-code">{languageLabels[language]}</span>
-                <ChevronDown size={10} className={`dropdown-arrow ${isLangMenuOpen ? 'open' : ''}`} />
-              </button>
-              {isLangMenuOpen && (
-                <div className="lang-menu">
-                  <button 
-                    className={`lang-option ${language === 'en' ? 'active' : ''}`}
-                    onClick={() => selectLanguage('en')}
-                  >
-                    English (EN)
-                  </button>
-                  <button 
-                    className={`lang-option ${language === 'hi' ? 'active' : ''}`}
-                    onClick={() => selectLanguage('hi')}
-                  >
-                    हिंदी (Hindi)
-                  </button>
-                  <button 
-                    className={`lang-option ${language === 'te' ? 'active' : ''}`}
-                    onClick={() => selectLanguage('te')}
-                  >
-                    తెలుగు (Telugu)
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="status-ready">
-              <span className="status-dot"></span> Ready
-            </div>
-            <button className="header-action-btn mobile-close-btn" onClick={toggleWidget} aria-label="Close chat">
-              <X size={16} />
-            </button>
+          <div className="flex items-center gap-2 font-semibold">
+            <Phone size={12} />
+            <span>+91 90541 08789</span>
+          </div>
+          <span className="hidden sm:inline opacity-90">Saleemnagar, opp. Musharambagh Metro</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 font-semibold text-xs opacity-90">
+            <button onClick={() => selectLanguage('en')} className={`hover:text-white transition-colors ${language === 'en' ? 'text-[#d8c28d]' : 'text-white/60'}`}>EN</button>
+            <button onClick={() => selectLanguage('te')} className={`hover:text-white transition-colors ${language === 'te' ? 'text-[#d8c28d]' : 'text-white/60'}`}>తెలుగు</button>
+            <button onClick={() => selectLanguage('hi')} className={`hover:text-white transition-colors ${language === 'hi' ? 'text-[#d8c28d]' : 'text-white/60'}`}>हिंदी</button>
           </div>
         </div>
+      </div>
 
-        {/* Body */}
-        <div className="chat-body chat-scroll" ref={chatBodyRef}>
-          <div className="chat-messages">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'user-message' : ''}`}>
-                {msg.role === 'bot' && (
-                  <div className="message-avatar">
-                    A
+      {/* Main Navbar */}
+      <nav className="hidden md:flex justify-between items-center px-[5%] py-4 bg-[#fcfaf5] border-b border-black/5 z-10 relative">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-[#043b2d] flex items-center justify-center relative shadow-sm">
+            <div className="w-3.5 h-3.5 rounded-full bg-[#d8c28d] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-100 absolute top-1.5 right-1.5"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-100 absolute bottom-1.5 left-1.5"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-100 absolute top-1.5 left-1.5"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-100 absolute bottom-1.5 right-1.5"></div>
+          </div>
+          <div className="leading-[1.15] text-[#043b2d]">
+            <div className="text-[10px] font-bold tracking-widest text-[#d8c28d]">KVNN'S</div>
+            <div className="text-[14px] font-bold font-serif">Advanced Wound Healing</div>
+          </div>
+        </div>
+        
+        <div className="hidden lg:flex items-center gap-7 text-[13px] font-semibold text-gray-700">
+          <a href="#" className="hover:text-[#043b2d] transition-colors">Home</a>
+          <a href="#" className="hover:text-[#043b2d] transition-colors">Conditions</a>
+          <a href="#" className="hover:text-[#043b2d] transition-colors">Treatments</a>
+          <a href="#" className="hover:text-[#043b2d] transition-colors">Specialists</a>
+          <a href="#" className="hover:text-[#043b2d] transition-colors">Book</a>
+          <a href="#" className="hover:text-[#043b2d] transition-colors">About</a>
+          <a href="#" className="hover:text-[#043b2d] transition-colors">Contact</a>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <button 
+            className="flex items-center gap-2 px-5 py-2 rounded-full border border-[#e0d5b8] bg-white text-[#043b2d] text-[13px] font-semibold hover:bg-[#f8f5ee] transition-colors shadow-sm"
+            onClick={() => setIsOpen(true)}
+          >
+            <div className="w-4 h-4 rounded-full shadow-[inset_-1px_-1px_2px_rgba(0,0,0,0.1)] bg-[radial-gradient(circle_at_30%_30%,#fff_0%,#d8c28d_50%,#043b2d_100%)]"></div>
+            Ask Asha
+          </button>
+          <button className="hidden sm:block px-6 py-2.5 rounded-full bg-[#d1b886] text-[#043b2d] text-[13px] font-bold hover:bg-[#c4a974] transition-colors shadow-sm">
+            Book Appointment
+          </button>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <main className="flex-1 bg-[#fcfaf5] flex flex-col relative z-0 overflow-hidden min-h-0">
+        {/* Hero Section */}
+        <section className="hidden md:block text-center pt-8 pb-4 px-4 flex-shrink-0">
+
+          <h1 className="text-3xl md:text-5xl font-serif text-[#113227] mb-2 md:mb-4 font-normal tracking-tight">Meet Asha</h1>
+          <p className="text-[15px] md:text-[17px] text-gray-600 max-w-[550px] mx-auto leading-relaxed px-4 md:px-0">
+            Ask anything — by typing or by voice. Asha is here to guide, reassure, and help you take the next step.
+          </p>
+        </section>
+
+        {/* Chat Inline Wrapper */}
+        <div className={`flex-1 min-h-0 w-full flex justify-center items-stretch md:items-start transition-all duration-700 ease-in-out px-0 md:px-4 pb-0 md:pb-4 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div className="relative bg-[#eff2f0] rounded-[24px] md:rounded-[32px] border-none md:border-[1.5px] border-white/90 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:shadow-[0_20px_50px_-12px_rgba(46,150,107,0.25),0_0_15px_rgba(255,255,255,0.6)] w-full md:w-[858px] max-w-full md:max-w-[95vw] flex-1 md:flex-none md:h-[620px] max-h-none md:max-h-[70vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="chat-header !rounded-t-[24px] md:!rounded-t-[32px] !py-[12px] md:!py-[24px] !px-[16px] md:!px-[32px] !min-h-[70px] md:!min-h-[112px]">
+              <div className="chat-header-content flex-1 min-w-0 mr-2 md:mr-0">
+                <div className="header-avatar-orbit scale-75 sm:scale-100 origin-left shrink-0">
+                  <div className="header-avatar-orb"></div>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="header-title font-bold" style={{ fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' }}>
+                    <span className="text-[18px] md:text-[24px]">Asha</span>
+                  </span>
+                  <span className="text-[11px] md:text-[13px] font-semibold text-[#cca66a] mt-0.5 md:mt-1 leading-snug line-clamp-2 sm:line-clamp-1">{translations[language].subtitle}</span>
+                </div>
+              </div>
+              <div className="header-actions shrink-0">
+                <div className="relative group">
+                  <button 
+                    className="status-ready !bg-white/10 !border-white/20 !px-3 !py-1 !rounded-full text-xs flex items-center gap-1.5 hover:!bg-white/20 cursor-pointer transition-colors"
+                    aria-label="Select language"
+                  >
+                    <Globe size={14} className="text-[#cca66a]" /> 
+                    <span>{languageLabels[language]}</span>
+                    <ChevronDown size={12} className="opacity-70" />
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-24 bg-white rounded-lg shadow-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <button onClick={() => setLanguage('en')} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${language === 'en' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>English</button>
+                    <button onClick={() => setLanguage('hi')} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${language === 'hi' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>हिंदी</button>
+                    <button onClick={() => setLanguage('te')} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${language === 'te' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>తెలుగు</button>
+                  </div>
+                </div>
+                <button className="header-action-btn mobile-close-btn ml-1 hover:bg-white/20" onClick={toggleWidget} aria-label="Minimize">
+                  <ChevronDown size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="chat-body chat-scroll flex-1 min-h-0 bg-[#ebf0ec]" ref={chatBodyRef}>
+              <div className="chat-messages pt-[4px] px-[16px] md:px-[30px]">
+                {messages.map((msg) => (
+                  <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                    {msg.role === 'bot' && (
+                      <div className="message-avatar shadow-sm">
+                        A
+                      </div>
+                    )}
+                    <div className={`message-content max-w-[92%] md:max-w-[85%] ${msg.role === 'user' ? 'items-end' : ''}`}>
+                      <div className={`message-bubble shadow-sm border border-black/5 text-[#2d3748] ${msg.role === 'user' ? '!bg-[#124d3c] !text-white !rounded-tl-[18px] !rounded-tr-[18px] !rounded-bl-[18px] !rounded-br-[4px]' : '!bg-white'}`}>
+                        {msg.content}
+                      </div>
+                      {msg.actionButtons && (
+                        <div className="action-buttons mt-2">
+                          {msg.actionButtons}
+                        </div>
+                      )}
+                    </div>
+                    {msg.role === 'user' && (
+                      <div className="user-avatar shadow-sm bg-[#124d3c] rounded-full w-[34px] h-[34px] flex items-center justify-center text-white shrink-0">
+                        <User size={18} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="message-group">
+                    <div className="message-avatar shadow-sm">A</div>
+                    <div className="message-content">
+                      <div className="message-bubble typing-indicator !bg-white shadow-sm border border-black/5">
+                        <span>.</span><span>.</span><span>.</span>
+                      </div>
+                    </div>
                   </div>
                 )}
-                <div className="message-content">
-                  <div className={`message-bubble ${msg.role === 'user' ? 'user-bubble' : ''}`}>
-                    {msg.content}
-                  </div>
-                  {msg.actionButtons && (
-                    <div className="action-buttons">
-                      {msg.actionButtons}
-                    </div>
-                  )}
-                </div>
               </div>
-            ))}
-            {isLoading && (
-              <div className="message-group">
-                <div className="message-avatar">A</div>
-                <div className="message-content">
-                  <div className="message-bubble typing-indicator">
-                    <span>.</span><span>.</span><span>.</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* Recommended Categories Flow Area */}
-          <div className="suggestion-pills-container">
-            <div className="suggestion-pills-track">
-              {currentPills.map((pillText, idx) => (
-                <button 
-                  key={idx} 
-                  className="pill"
-                  onClick={() => handleSend(pillText, true)}
-                >
-                  <span>{pillText}</span>
+              {/* Recommended Categories Flow Area */}
+              <div className="suggestion-pills-container w-full shrink-0 px-[16px] md:px-[30px] pt-4 pb-[16px] flex justify-center mt-2">
+                
+                {/* Mobile Drawer-style Container */}
+                <div className="md:hidden w-full max-w-[400px] mx-auto bg-gradient-to-b from-[#e3ece7]/95 to-[#d6e2dc]/95 backdrop-blur-md rounded-2xl p-3 pt-2.5 shadow-sm border border-white/50 relative z-10">
+                  <div className="w-10 h-1.5 bg-[#b5c7bd] rounded-full mx-auto mb-3.5"></div>
+                  <div className="flex flex-col gap-2.5">
+                    {currentPills.map((pillText, index) => (
+                      <button 
+                        key={index} 
+                        className="w-full flex items-center gap-3 bg-gradient-to-b from-white/95 to-white/60 border border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-[#113227] text-[13px] font-semibold px-4 py-2.5 rounded-full transition-colors active:scale-[0.98]"
+                        onClick={() => handleSend(pillText, true)}
+                      >
+                        <span className="flex items-center justify-center w-6 opacity-90">{getPillIcon(pillText)}</span>
+                        <span className="truncate">{pillText}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Desktop Grid Container */}
+                <div className="hidden md:grid md:grid-cols-3 gap-3 w-full max-w-full">
+                  {currentPills.map((pillText, index) => (
+                    <button 
+                      key={index} 
+                      className="pill shadow-sm bg-white hover:bg-gray-50 text-[#333] text-[13.5px] font-medium px-4 py-2.5 rounded-[16px] transition-colors text-center truncate"
+                      onClick={() => handleSend(pillText, true)}
+                      title={pillText}
+                    >
+                      <span className="truncate block w-full">{pillText}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Footer */}
+            <div className="chat-footer bg-white border-t border-gray-100 flex-shrink-0">
+              <div className="flex justify-end items-center px-[16px] md:px-[20px] pt-1 md:pt-0 pb-1 md:pb-0">
+                <span className="text-[12px] md:text-[13.5px] text-[#697a72] mr-3 font-medium">Asha's voice</span>
+                <label className="voice-switch relative inline-block w-[40px] md:w-[44px] h-[22px] md:h-[24px]">
+                  <input type="checkbox" className="opacity-0 w-0 h-0" checked={isVoiceEnabled} onChange={toggleVoice} />
+                  <span className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors ${isVoiceEnabled ? 'bg-[#043b2d]' : 'bg-[#e2e8e4]'}`}></span>
+                  <span className={`absolute h-[18px] md:h-[20px] w-[18px] md:w-[20px] left-[2px] bottom-[2px] bg-white rounded-full transition-transform shadow-sm ${isVoiceEnabled ? 'translate-x-[18px] md:translate-x-[20px]' : ''}`}></span>
+                </label>
+              </div>
+              <div className="flex items-center gap-2 md:gap-3 px-[10px] md:px-[14px] pt-0 pb-2 md:pb-3">
+                <div className="flex-1 bg-[#e6ebe7] rounded-full px-3 md:px-4 py-2 md:py-2.5 flex items-center border border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white transition-colors shadow-sm">
+                  <input 
+                    type="text" 
+                    className="w-full bg-transparent border-none outline-none text-[14px] md:text-[15px] text-gray-800 placeholder-gray-500" 
+                    placeholder={t.inputPlaceholder} 
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && inputValue.trim() && handleSend(inputValue, false)}
+                  />
+                </div>
+                <button className="w-[44px] h-[44px] rounded-full bg-[#cca66a] text-white flex items-center justify-center hover:bg-[#b5925a] transition-colors shrink-0 shadow-sm" aria-label="Use microphone">
+                  <Mic size={22} />
                 </button>
-              ))}
+                <button 
+                  className="w-[44px] h-[44px] rounded-full bg-[#043b2d] text-white flex items-center justify-center hover:bg-[#032e23] transition-colors shrink-0 shadow-sm"
+                  aria-label="Send message"
+                  onClick={() => inputValue.trim() && handleSend(inputValue, false)}
+                >
+                  <Send size={22} className="ml-0.5" />
+                </button>
+              </div>
             </div>
-          </div>
-          
-          <div ref={messagesEndRef} />
-        </div>
 
-        {/* Footer */}
-        <div className="chat-footer">
-          <div className="voice-toggle-row">
-            <span className="voice-toggle-label">Asha's voice</span>
-            <label className="voice-switch">
-              <input type="checkbox" checked={isVoiceEnabled} onChange={toggleVoice} />
-              <span className="voice-slider"></span>
-            </label>
-          </div>
-          <div className="footer-bottom">
-            <div className="input-container">
-              <input 
-                type="text" 
-                className="chat-input" 
-                placeholder={t.inputPlaceholder} 
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend(inputValue, false)}
-              />
-            </div>
-            <button className="btn-icon btn-mic" aria-label="Use microphone">
-              <Mic size={18} />
-            </button>
-            <button 
-              className="btn-icon btn-send" 
-              aria-label="Send message"
-              onClick={() => handleSend(inputValue, false)}
-              disabled={!inputValue.trim()}
-            >
-              <Send size={18} />
-            </button>
           </div>
         </div>
 
+
+
+      </main>
+
+      {/* Floating Action Buttons */}
+      <div className={`fixed bottom-4 md:bottom-8 right-4 md:right-8 flex-col gap-3 md:gap-4 z-50 ${isOpen ? 'hidden md:flex' : 'flex'}`}>
+        <button 
+          className="w-[52px] h-[52px] rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.15)] border-2 border-[#fcfaf5] bg-gradient-to-br from-[#f6e8cc] to-[#d1b886] flex items-center justify-center hover:scale-105 transition-transform"
+          onClick={() => setIsOpen(true)}
+          title="Talk to Asha"
+        >
+          <div className="w-[26px] h-[26px] rounded-full shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.2),0_0_6px_rgba(255,255,255,0.8)] bg-[radial-gradient(circle_at_35%_35%,#fff_0%,#f4dca6_35%,#c8a165_70%,#4a866d_100%)]"></div>
+        </button>
+        <button className="w-[52px] h-[52px] rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.15)] bg-[#25d366] text-white flex items-center justify-center hover:scale-105 transition-transform">
+          <MessageCircle size={26} />
+        </button>
+        <button className="w-[52px] h-[52px] rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.15)] bg-[#d1b886] text-white flex items-center justify-center hover:scale-105 transition-transform">
+          <Phone size={24} fill="currentColor" />
+        </button>
       </div>
 
-      {/* Floating Action Button */}
-      <button 
-        className={`fab-button ${isOpen ? 'mobile-hidden' : ''}`} 
-        onClick={toggleWidget}
-        aria-label="Toggle Chat"
-      >
-        {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
-      </button>
 
     </div>
   );
