@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode, ChangeEvent } from 'react';
 import { MessageCircle, Mic, Send, X, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText, ArrowLeft, Activity, AlertCircle, Wind } from 'lucide-react';
+import CalendarPicker from '@/components/CalendarPicker';
+import PatientIntakeForm from '@/components/PatientIntakeForm';
+import PhoneVerificationForm from '@/components/PhoneVerificationForm';
+import PatientRegistrationForm from '@/components/PatientRegistrationForm';
+import PatientSummaryCard from '@/components/PatientSummaryCard';
+import BookingConfirmationCard from '@/components/BookingConfirmationCard';
 import { CLINIC, doctorName, departmentName } from '@/booking';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { LanguageToggle, useLang } from '@/i18n';
