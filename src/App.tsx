@@ -1,29 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import type { ReactNode, ChangeEvent } from 'react';
-import { MessageCircle, Mic, Send, X, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText, ArrowLeft, Activity, AlertCircle, Wind } from 'lucide-react';
-import CalendarPicker from '@/components/CalendarPicker';
-import PatientIntakeForm from '@/components/PatientIntakeForm';
-import PhoneVerificationForm from '@/components/PhoneVerificationForm';
-import PatientRegistrationForm from '@/components/PatientRegistrationForm';
-import PatientSummaryCard from '@/components/PatientSummaryCard';
-import BookingConfirmationCard from '@/components/BookingConfirmationCard';
+import type { ReactNode } from 'react';
+import { MessageCircle, Mic, Send, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText, Activity, AlertCircle, Wind } from 'lucide-react';
 import { CLINIC, doctorName, departmentName } from '@/booking';
 import { BookingWizard } from '@/components/booking/BookingWizard';
 import { LanguageToggle, useLang } from '@/i18n';
-import OpenAI from 'openai';
-import { knowledgeBase } from './kb';
+import { apiClient } from '@/api/apiClient';
+import type { FormRequest } from '@/api/apiClient';
 import './App.css';
-
-// Hardcoded API key to bypass dev server restart
-const apiKey = "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" as string;
-let openai: OpenAI | null = null;
-if (apiKey && apiKey !== 'your_openai_api_key_here') {
-  openai = new OpenAI({ 
-    baseURL: 'https://openrouter.ai/api/v1',
-    apiKey, 
-    dangerouslyAllowBrowser: true 
-  });
-}
 
 type Language = 'en' | 'hi' | 'te';
 
@@ -64,7 +47,7 @@ const translations: Record<Language, Translations> = {
     subtitle: 'Care Companion · always here for you',
     welcomeMessage: (
       <div>
-        <p>Namaste, and welcome. 🙏 I'm <strong>Asha</strong>, your care companion at KVNN's Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
+        <p>Namaste 🙏 I'm <strong>Asha</strong>, your care companion at KVNN's Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
       </div>
     ),
     bookAppointment: 'Book appointment',
@@ -259,9 +242,6 @@ interface Message {
   actionButtons?: ReactNode;
 }
 
-// 13-Step AWH WhatsApp Appointment Booking Workflow Steps
-type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
-
 interface BookingData {
   category: string;
   imageUrl: string | null;
@@ -278,13 +258,13 @@ function App() {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [language, setLanguage] = useState<Language>('en');
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  
+  const [, setIsLangMenuOpen] = useState(false);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentPills, setCurrentPills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<Step>(1);
-  const [bookingData, setBookingData] = useState<BookingData>({
+  const [_step, setStep] = useState<number>(1);
+  const [_bookingData, setBookingData] = useState<BookingData>({
     category: '',
     imageUrl: null,
     status: '',
@@ -294,8 +274,10 @@ function App() {
     patientAge: '',
     patientPhone: ''
   });
-  
-  const [bookingView, setBookingView] = useState<{ active: boolean; patientType?: 'new'|'existing'; name?: string }>({ active: false });
+
+  const conversationIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '70000000-0000-4000-8000-000000000001');
+  const threadIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '90000000-0000-4000-8000-000000000001');
+  const [bookingView, setBookingView] = useState<{ active: boolean; patientType?: 'new' | 'existing'; name?: string }>({ active: false });
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -313,7 +295,7 @@ function App() {
   const handleBookingComplete = (details: any) => {
     setBookingView({ active: false });
     setStep(8); // Mark as complete
-    
+
     addMessage('bot', (
       <div className="confirmation-card">
         <div className="card-header-badge">
@@ -368,7 +350,7 @@ function App() {
               <span className="detail-val">{t.stepPrompts.clinicAddress}</span>
             </div>
           </div>
-          
+
           {details.reference && (
             <div className="detail-row">
               <FileText size={15} className="detail-icon" />
@@ -386,6 +368,9 @@ function App() {
 
   // Initialize or reset flow
   const resetWorkflow = () => {
+    const genUuid = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `70000000-0000-4000-8000-${Date.now()}`.padEnd(36, '0');
+    conversationIdRef.current = genUuid();
+    threadIdRef.current = genUuid();
     setStep(1);
     setCurrentPills(t.suggestionPills);
     setBookingData({
@@ -436,381 +421,129 @@ function App() {
     setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content }]);
   };
 
-  // Step 2: Select Category
-  const handleStepSelectCategory = (preselectedCategory?: string) => {
-    if (preselectedCategory) {
-      addMessage('user', preselectedCategory);
-      setBookingData(prev => ({ ...prev, category: preselectedCategory }));
-      setStep(3);
-      setTimeout(() => promptStep3UploadImage(preselectedCategory), 400);
-      return;
-    }
 
-    setStep(2);
-    addMessage('bot', (
-      <div>
-        <p>{t.stepPrompts.selectCategory}</p>
-        <div className="options-grid mt-2">
-          {t.suggestionPills.map((cat, idx) => (
-            <button 
-              key={idx} 
-              className="option-btn"
-              onClick={() => {
-                if (cat.toLowerCase().includes('upload')) {
-                  handleStepSelectCategory("Upload an image of your wound");
-                } else {
-                  handleStepSelectCategory(cat);
-                }
-              }}
-            >
-              <span className="option-num">{idx + 1}</span>
-              <span>{cat}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    ));
-  };
 
-  // Step 3: Upload Image Prompt
-  const promptStep3UploadImage = (_categoryName?: string) => {
-    addMessage('bot', (
-      <div className="upload-step-bubble">
-        <p>{t.stepPrompts.uploadImage}</p>
-        <div className="action-buttons mt-3">
-          <label htmlFor="chat-file-input" className="btn-primary flex items-center gap-2 cursor-pointer">
-            <Upload size={16} />
-            <span>{t.stepPrompts.uploadBtn}</span>
-          </label>
-          <input 
-            type="file" 
-            id="chat-file-input" 
-            accept="image/*" 
-            className="hidden"
-            onChange={handleImageUpload}
-          />
-          <button className="btn-secondary" onClick={() => handleSkipImage()}>{t.stepPrompts.skipPhotoBtn}</button>
-        </div>
-      </div>
-    ));
-  };
+const DynamicBackendFormCard = ({
+  form,
+  onSubmit,
+}: {
+  form: FormRequest;
+  onSubmit: (answers: Record<string, string>) => void;
+}) => {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setBookingData(prev => ({ ...prev, imageUrl: url }));
-      addMessage('user', (
-        <div className="user-image-preview">
-          <img src={url} alt="Wound sample" className="rounded-lg max-h-32 object-cover" />
-          <span className="text-xs text-emerald-700 font-medium block mt-1">✓ Wound Photo Uploaded</span>
-        </div>
-      ));
-      setStep(4);
-      setTimeout(() => promptStep4SelectStatus(), 400);
-    }
-  };
-
-  const handleSkipImage = () => {
-    addMessage('user', "Skipped wound photo for now");
-    setStep(4);
-    setTimeout(() => promptStep4SelectStatus(), 400);
-  };
-
-  // Step 4: Select Wound Status
-  const promptStep4SelectStatus = () => {
-    addMessage('bot', (
-      <div>
-        <p>{t.stepPrompts.selectStatus}</p>
-        <div className="options-grid mt-2">
-          {t.statuses.map((statusItem, idx) => (
-            <button 
-              key={idx} 
-              className="option-btn"
-              onClick={() => handleSelectStatus(statusItem)}
-            >
-              <span>{statusItem}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    ));
-  };
-
-  const handleSelectStatus = (statusName: string) => {
-    addMessage('user', statusName);
-    setBookingData(prev => ({ ...prev, status: statusName }));
-    setStep(5);
-    setTimeout(() => promptStep5ChooseSpecialist(), 400);
-  };
-
-  // Step 5: Choose Specialist
-  const promptStep5ChooseSpecialist = () => {
-    addMessage('bot', (
-      <div>
-        <p>{t.stepPrompts.selectSpecialist}</p>
-        <div className="specialists-list mt-3">
-          {t.specialists.map((doc, idx) => (
-            <button 
-              key={idx} 
-              className="doctor-card-btn"
-              onClick={() => handleSelectSpecialist(doc.name)}
-            >
-              <div className="doc-avatar"><Stethoscope size={18} /></div>
-              <div className="doc-info">
-                <span className="doc-name">{doc.name}</span>
-                <span className="doc-title">{doc.title}</span>
-                <span className="doc-exp">{doc.exp}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    ));
-  };
-
-  const handleSelectSpecialist = (docName: string) => {
-    addMessage('user', docName);
-    setBookingData(prev => ({ ...prev, specialist: docName }));
-    if (step === 11) {
-      setStep(12);
-    } else {
-      setStep(6);
-    }
-    setTimeout(() => promptStep6SelectSlot(docName), 400);
-  };
-
-  // Step 6: Select Slot
-  const promptStep6SelectSlot = (_docName?: string) => {
-    addMessage('bot', (
-      <div>
-        <p>{t.stepPrompts.selectSlot}</p>
-        <div className="slots-grid mt-2">
-          {t.slots.map((slotItem, idx) => (
-            <button 
-              key={idx} 
-              className="slot-btn"
-              onClick={() => handleSelectSlot(slotItem)}
-            >
-              <Calendar size={14} />
-              <span>{slotItem}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    ));
-  };
-
-  const handleSelectSlot = (slotTime: string) => {
-    addMessage('user', slotTime);
-    const updatedData = { ...bookingData, slot: slotTime };
-    setBookingData(updatedData);
-    
-    if (step === 12) {
-      setStep(13);
-      setTimeout(() => showStep8Confirmation(updatedData), 400);
-    } else {
-      setStep(7);
-      setTimeout(() => {
-        addMessage('bot', (
-          <div>
-            <p>{t.stepPrompts.enterDetails}</p>
+  return (
+    <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm mt-2 space-y-3">
+      {form.title && <h4 className="font-semibold text-emerald-950 text-sm">{form.title}</h4>}
+      {form.reason && <p className="text-xs text-gray-600">{form.reason}</p>}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(answers);
+        }}
+        className="space-y-3"
+      >
+        {form.fields.map((field) => (
+          <div key={field.name} className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-gray-700">
+              {field.label} {field.required && <span className="text-red-500">*</span>}
+            </label>
+            {field.type === 'select' ? (
+              <select
+                className="w-full text-xs p-2 bg-emerald-50/50 border border-emerald-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                value={answers[field.name] || ''}
+                onChange={(e) => setAnswers({ ...answers, [field.name]: e.target.value })}
+                required={field.required}
+              >
+                <option value="">Select option...</option>
+                {field.options?.map((opt, i) => (
+                  <option key={i} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={field.type === 'tel' ? 'tel' : field.type === 'email' ? 'email' : field.type === 'date' ? 'date' : 'text'}
+                className="w-full text-xs p-2 bg-emerald-50/50 border border-emerald-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                placeholder=""
+                value={answers[field.name] || ''}
+                onChange={(e) => setAnswers({ ...answers, [field.name]: e.target.value })}
+                required={field.required}
+              />
+            )}
           </div>
-        ));
-      }, 400);
-    }
-  };
+        ))}
+        <button
+          type="submit"
+          className="w-full py-2 px-3 bg-[#113227] hover:bg-[#043b2d] text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+        >
+          Submit Form
+        </button>
+      </form>
+    </div>
+  );
+};
 
   // Step 7: Handle text input details or AI question
   const callLLM = async (userMessage: string) => {
     setIsLoading(true);
     setCurrentPills([]);
     try {
-      if (!openai) {
-        setTimeout(() => {
-          const mockPills = [
+      // Send natural language message directly to AI Orchestration Engine on port 3001 using persistent session IDs
+      const aiRes = await apiClient.sendChatMessage(userMessage, conversationIdRef.current, threadIdRef.current);
+      if (aiRes && aiRes.response) {
+        addMessage('bot', (
+          <div>
+            <p className="text-sm whitespace-pre-wrap">{aiRes.response}</p>
+            {aiRes.form && (
+              <DynamicBackendFormCard
+                form={aiRes.form}
+                onSubmit={async (answers) => {
+                  addMessage('user', `Submitted form details`);
+                  setIsLoading(true);
+                  try {
+                    const followUp = await apiClient.sendChatMessage(undefined, conversationIdRef.current, threadIdRef.current, answers);
+                    if (followUp && followUp.response) {
+                      addMessage('bot', followUp.response);
+                    }
+                  } catch (err) {
+                    console.error('Form submit error:', err);
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }}
+              />
+            )}
+          </div>
+        ));
+
+        if (aiRes.suggestedActions && aiRes.suggestedActions.length > 0) {
+          setCurrentPills(aiRes.suggestedActions);
+        } else {
+          setCurrentPills([
             "Tell me more",
             "What treatments are available?",
-            "How much does it cost?",
             "Book an appointment",
             "Where is the clinic?"
-          ];
-          addMessage('bot', "I am currently in mock mode since no OpenAI API key was provided. I would normally give you a contextual response here!");
-          setCurrentPills(mockPills);
-          setIsLoading(false);
-        }, 1500);
-        return;
-      }
-      const response = await openai.chat.completions.create({
-        model: "openai/gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are Asha, a helpful virtual assistant for Advanced Wound Healing Clinics (AWH Clinics).
-You must strictly follow the rules, facts, and constraints provided in the Knowledge Base below.
-Do not hardcode any information outside the knowledge base, and ensure all appointment details follow the documented hospital workflow.
-If asked something not covered, follow the Human Handoff rules. Never provide diagnosis, treatment advice, dosing, or medical opinion.
-
-CRITICAL INSTRUCTION FOR TONE & EMPATHY: Whenever a user mentions ANY medical condition, treatment category (like 'Diabetic Foot Care', 'Trauma', 'Burn Injuries', 'Ulcers'), or expresses pain/discomfort, you MUST ALWAYS start your response with a highly empathetic and caring sentence (e.g., "I am so sorry you are dealing with this," or "That sounds very difficult, but you are in the right place.") before providing any clinical facts. NEVER give a purely factual response to a medical concern without first showing sympathy.
-
-CRITICAL INSTRUCTION: You MUST respond to the user in the language of the application UI which is currently set to: ${languageLabels[language]}. If the user types in ${languageLabels[language]}, reply in ${languageLabels[language]}.
-
-Knowledge Base:
-${knowledgeBase}
-
-When suggesting follow-up options, suggest 3-6 short actionable phrases or categories as 'pills'.
-If the user wants to book or schedule an appointment, include a pill containing 'Book appointment' or 'Schedule appointment'.
-Output strictly in JSON format matching this schema:
-{
-  "reply": "your text response here",
-  "pills": ["Option 1", "Option 2"]
-}`
-          },
-          { role: "user", content: userMessage }
-        ],
-        response_format: { type: "json_object" }
-      });
-
-      const text = response.choices[0]?.message?.content || '{}';
-      const parsed = JSON.parse(text);
-      
-      addMessage('bot', parsed.reply);
-      if (parsed.pills && Array.isArray(parsed.pills)) {
-        setCurrentPills(parsed.pills);
+          ]);
+        }
       }
     } catch (e) {
-      console.error(e);
-      addMessage('bot', "I encountered an error connecting to my brain. Please try again.");
+      console.error('AI chat endpoint error:', e);
+      addMessage('bot', "I'm sorry, I had trouble connecting to the care assistant server. Please ensure the backend server is running on port 3001 or try sending your message again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSend = (text: string, isFromPill: boolean = false) => {
+  const handleSend = (text: string, _isFromPill: boolean = false) => {
     if (!text.trim()) return;
-    
+
     addMessage('user', text);
     setInputValue('');
 
-    if (step === 7) {
-      processDetails(text);
-      return;
-    }
-    
-    if (step === 10) {
-      processDetails(text, true);
-      return;
-    }
-
-    const lower = text.toLowerCase();
-    if (lower.includes('book') || lower.includes('schedule') || lower.includes('appointment') || lower.includes('बुक') || lower.includes('అపాయింట్‌మెంట్')) {
-      if (isFromPill) {
-        setBookingView({ active: true });
-      } else {
-        setStep(10);
-        setTimeout(() => {
-          addMessage('bot', t.stepPrompts.manualBookingPrompt);
-        }, 400);
-      }
-      return;
-    }
-
     callLLM(text);
-  };
-
-  const processDetails = (trimmed: string, isManualFlow: boolean = false) => {
-    const parts = trimmed.split(',').map(s => s.trim());
-    const pName = parts[0] || trimmed;
-    const pAge = parts[1] || '42';
-    const pPhone = parts[2] || '9876543210';
-
-    const finalData: BookingData = {
-      ...bookingData,
-      patientName: pName,
-      patientAge: pAge,
-      patientPhone: pPhone
-    };
-    setBookingData(finalData);
-    
-    if (isManualFlow) {
-      setStep(11);
-      setTimeout(() => promptStep5ChooseSpecialist(), 400);
-    } else {
-      setStep(8);
-      setTimeout(() => showStep8Confirmation(finalData), 500);
-    }
-  };
-
-  // Step 8: Show Confirmation Summary Card
-  const showStep8Confirmation = (data: BookingData) => {
-    addMessage('bot', (
-      <div className="confirmation-card">
-        <div className="card-header-badge">
-          <CheckCircle2 size={20} className="text-emerald-500" />
-          <span className="card-title">{t.stepPrompts.confirmationTitle}</span>
-        </div>
-
-        <div className="card-body-details">
-          <div className="detail-row">
-            <User size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Patient:</span>
-              <span className="detail-val">{data.patientName || 'Ramesh Kumar'} ({data.patientAge || '45'} yrs)</span>
-            </div>
-          </div>
-
-          <div className="detail-row">
-            <Phone size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Contact:</span>
-              <span className="detail-val">{data.patientPhone || '9876543210'}</span>
-            </div>
-          </div>
-
-          <div className="detail-row">
-            <Stethoscope size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Doctor:</span>
-              <span className="detail-val">{data.specialist || 'Dr. Ramesh Kumar'}</span>
-            </div>
-          </div>
-
-          <div className="detail-row">
-            <Calendar size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Date & Time:</span>
-              <span className="detail-val">{data.slot || 'Tomorrow at 10:30 AM'}</span>
-            </div>
-          </div>
-
-          <div className="detail-row">
-            <MapPin size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Location:</span>
-              <span className="detail-val">{t.stepPrompts.clinicAddress}</span>
-            </div>
-          </div>
-
-          {data.category && (
-            <div className="detail-row">
-              <FileText size={15} className="detail-icon" />
-              <div>
-                <span className="detail-label">Category:</span>
-                <span className="detail-val">{data.category}</span>
-              </div>
-            </div>
-          )}
-
-          {data.imageUrl && (
-            <div className="wound-photo-summary">
-              <span className="text-xs font-semibold text-gray-700 block mb-1">Attached Wound Photo:</span>
-              <img src={data.imageUrl} alt="Uploaded wound" className="rounded-lg h-24 object-cover border border-emerald-200" />
-            </div>
-          )}
-        </div>
-
-      </div>
-    ));
   };
 
   const getPillIcon = (text: string) => {
@@ -833,7 +566,7 @@ Output strictly in JSON format matching this schema:
       <main className="mx-auto flex min-h-dvh sm:min-h-[85vh] sm:max-h-[90vh] sm:my-6 max-w-3xl flex-col overflow-y-auto overflow-x-hidden sm:overflow-hidden px-0 py-0 sm:px-6 sm:py-6 bg-white sm:rounded-2xl sm:shadow-2xl sm:border sm:border-emerald/10">
         <header className="relative mb-3 flex-none text-center sm:mb-4 px-3 pt-3 sm:px-0 sm:pt-0">
           <div className="absolute left-0 top-0">
-            <button 
+            <button
               onClick={() => setBookingView({ active: false })}
               className="flex items-center gap-1 text-xs font-medium text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition-colors border border-emerald-200"
             >
@@ -905,7 +638,7 @@ Output strictly in JSON format matching this schema:
             <div className="text-[14px] font-bold font-serif">Advanced Wound Healing</div>
           </div>
         </div>
-        
+
         <div className="hidden lg:flex items-center gap-7 text-[13px] font-semibold text-gray-700">
           <a href="#" className="hover:text-[#043b2d] transition-colors">Home</a>
           <a href="#" className="hover:text-[#043b2d] transition-colors">Conditions</a>
@@ -915,9 +648,9 @@ Output strictly in JSON format matching this schema:
           <a href="#" className="hover:text-[#043b2d] transition-colors">About</a>
           <a href="#" className="hover:text-[#043b2d] transition-colors">Contact</a>
         </div>
-        
+
         <div className="flex items-center gap-3">
-          <button 
+          <button
             className="flex items-center gap-2 px-5 py-2 rounded-full border border-[#e0d5b8] bg-white text-[#043b2d] text-[13px] font-semibold hover:bg-[#f8f5ee] transition-colors shadow-sm"
             onClick={() => setIsOpen(true)}
           >
@@ -944,7 +677,7 @@ Output strictly in JSON format matching this schema:
         {/* Chat Inline Wrapper */}
         <div className={`flex-1 min-h-0 w-full flex justify-center items-stretch md:items-start transition-all duration-700 ease-in-out px-0 md:px-4 pb-0 md:pb-4 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           <div className="relative bg-[#eff2f0] rounded-[24px] md:rounded-[32px] border-none md:border-[1.5px] border-white/90 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:shadow-[0_20px_50px_-12px_rgba(46,150,107,0.25),0_0_15px_rgba(255,255,255,0.6)] w-full md:w-[858px] max-w-full md:max-w-[95vw] flex-1 md:flex-none md:h-[620px] max-h-none md:max-h-[70vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            
+
             {/* Header */}
             <div className="chat-header !rounded-t-[24px] md:!rounded-t-[32px] !py-[12px] md:!py-[24px] !px-[16px] md:!px-[32px] !min-h-[70px] md:!min-h-[112px]">
               <div className="chat-header-content flex-1 min-w-0 mr-2 md:mr-0">
@@ -960,11 +693,11 @@ Output strictly in JSON format matching this schema:
               </div>
               <div className="header-actions shrink-0">
                 <div className="relative group">
-                  <button 
+                  <button
                     className="status-ready !bg-white/10 !border-white/20 !px-3 !py-1 !rounded-full text-xs flex items-center gap-1.5 hover:!bg-white/20 cursor-pointer transition-colors"
                     aria-label="Select language"
                   >
-                    <Globe size={14} className="text-[#cca66a]" /> 
+                    <Globe size={14} className="text-[#cca66a]" />
                     <span>{languageLabels[language]}</span>
                     <ChevronDown size={12} className="opacity-70" />
                   </button>
@@ -1021,14 +754,14 @@ Output strictly in JSON format matching this schema:
 
               {/* Recommended Categories Flow Area */}
               <div className="suggestion-pills-container w-full shrink-0 px-[16px] md:px-[30px] pt-4 pb-[16px] flex justify-center mt-2">
-                
+
                 {/* Mobile Drawer-style Container */}
                 <div className="md:hidden w-full max-w-[400px] mx-auto bg-gradient-to-b from-[#e3ece7]/95 to-[#d6e2dc]/95 backdrop-blur-md rounded-2xl p-3 pt-2.5 shadow-sm border border-white/50 relative z-10">
                   <div className="w-10 h-1.5 bg-[#b5c7bd] rounded-full mx-auto mb-3.5"></div>
                   <div className="flex flex-col gap-2.5">
                     {currentPills.map((pillText, index) => (
-                      <button 
-                        key={index} 
+                      <button
+                        key={index}
                         className="w-full flex items-center gap-3 bg-gradient-to-b from-white/95 to-white/60 border border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-[#113227] text-[13px] font-semibold px-4 py-2.5 rounded-full transition-colors active:scale-[0.98]"
                         onClick={() => handleSend(pillText, true)}
                       >
@@ -1042,8 +775,8 @@ Output strictly in JSON format matching this schema:
                 {/* Desktop Grid Container */}
                 <div className="hidden md:grid md:grid-cols-3 gap-3 w-full max-w-full">
                   {currentPills.map((pillText, index) => (
-                    <button 
-                      key={index} 
+                    <button
+                      key={index}
                       className="pill shadow-sm bg-white hover:bg-gray-50 text-[#333] text-[13.5px] font-medium px-4 py-2.5 rounded-[16px] transition-colors text-center truncate"
                       onClick={() => handleSend(pillText, true)}
                       title={pillText}
@@ -1053,7 +786,7 @@ Output strictly in JSON format matching this schema:
                   ))}
                 </div>
               </div>
-              
+
               <div ref={messagesEndRef} />
             </div>
 
@@ -1069,10 +802,10 @@ Output strictly in JSON format matching this schema:
               </div>
               <div className="flex items-center gap-2 md:gap-3 px-[10px] md:px-[14px] pt-0 pb-2 md:pb-3">
                 <div className="flex-1 bg-[#e6ebe7] rounded-full px-3 md:px-4 py-2 md:py-2.5 flex items-center border border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white transition-colors shadow-sm">
-                  <input 
-                    type="text" 
-                    className="w-full bg-transparent border-none outline-none text-[14px] md:text-[15px] text-gray-800 placeholder-gray-500" 
-                    placeholder={t.inputPlaceholder} 
+                  <input
+                    type="text"
+                    className="w-full bg-transparent border-none outline-none text-[14px] md:text-[15px] text-gray-800 placeholder-gray-500"
+                    placeholder=""
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && inputValue.trim() && handleSend(inputValue, false)}
@@ -1081,7 +814,7 @@ Output strictly in JSON format matching this schema:
                 <button className="w-[44px] h-[44px] rounded-full bg-[#cca66a] text-white flex items-center justify-center hover:bg-[#b5925a] transition-colors shrink-0 shadow-sm" aria-label="Use microphone">
                   <Mic size={22} />
                 </button>
-                <button 
+                <button
                   className="w-[44px] h-[44px] rounded-full bg-[#043b2d] text-white flex items-center justify-center hover:bg-[#032e23] transition-colors shrink-0 shadow-sm"
                   aria-label="Send message"
                   onClick={() => inputValue.trim() && handleSend(inputValue, false)}
@@ -1100,7 +833,7 @@ Output strictly in JSON format matching this schema:
 
       {/* Floating Action Buttons */}
       <div className={`fixed bottom-4 md:bottom-8 right-4 md:right-8 flex-col gap-3 md:gap-4 z-50 ${isOpen ? 'hidden md:flex' : 'flex'}`}>
-        <button 
+        <button
           className="w-[52px] h-[52px] rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.15)] border-2 border-[#fcfaf5] bg-gradient-to-br from-[#f6e8cc] to-[#d1b886] flex items-center justify-center hover:scale-105 transition-transform"
           onClick={() => setIsOpen(true)}
           title="Talk to Asha"

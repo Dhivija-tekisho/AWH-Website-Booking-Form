@@ -60,7 +60,7 @@ export function StepVerify({
               type="tel"
               autoComplete="tel"
               value={phone}
-              placeholder={t('verify.phone.placeholder')}
+              placeholder=""
               onChange={(e) => onPhoneChange(e.target.value)}
             />
             <Button
@@ -85,7 +85,7 @@ export function StepVerify({
             inputMode="text"
             autoComplete="one-time-code"
             value={otp}
-            placeholder={t('verify.otp.placeholder')}
+            placeholder=""
             disabled={!otpSent}
             onChange={(e) => onOtpChange(e.target.value)}
           />

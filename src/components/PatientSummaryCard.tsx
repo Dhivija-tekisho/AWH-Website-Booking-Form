@@ -1,5 +1,4 @@
-import React from 'react';
-import { User, Phone, CheckCircle2 } from 'lucide-react';
+import { User, CheckCircle2 } from 'lucide-react';
 
 interface PatientSummaryCardProps {
   details: {

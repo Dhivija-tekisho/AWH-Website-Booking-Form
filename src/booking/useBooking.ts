@@ -3,6 +3,8 @@ import {
   BOOKING_STEPS,
   DEPARTMENTS,
   DOCTORS,
+  departmentName,
+  doctorName,
   initialBookingState,
   lookupExistingPatients,
   makeReference,
@@ -294,6 +296,25 @@ export function useBooking(initialOverrides?: Partial<BookingState>) {
     confirm: () => {
       const reference = makeReference();
       dispatch({ type: 'CONFIRM', reference });
+      
+      // Async persist to DHP Core API & PostgreSQL
+      import('@/api/apiClient').then(({ apiClient }) => {
+        apiClient.bookAppointment({
+          patientId: state.patientId || undefined,
+          patientName: state.name || 'Patient',
+          patientPhone: state.phone || '9876543210',
+          patientAge: state.age,
+          gender: state.gender,
+          doctorId: state.doctor?.id || 'doc-ramesh',
+          doctorName: state.doctor ? doctorName(state.doctor.id) : 'Dr. K.V.N.N. Santosh Murthy',
+          departmentId: state.department?.id || 'dept-vascular',
+          departmentName: state.department ? departmentName(state.department.id) : 'Advanced Wound Healing',
+          date: state.date ? state.date.toISOString().split('T')[0]! : new Date().toISOString().split('T')[0]!,
+          slot: state.slot || '10:30 AM',
+          notes: state.notes,
+        }).catch(err => console.warn('Persistence sync notice:', err));
+      });
+
       return reference;
     },
     validate,

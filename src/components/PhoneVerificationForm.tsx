@@ -41,7 +41,7 @@ export default function PhoneVerificationForm({ onSubmit }: PhoneVerificationFor
                 value={formData.phone}
                 onChange={handleChange}
                 className="w-full text-sm p-2 focus:outline-none" 
-                placeholder="90000 00000"
+                placeholder=""
               />
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function PhoneVerificationForm({ onSubmit }: PhoneVerificationFor
               value={formData.otp}
               onChange={handleChange}
               className="w-full text-center tracking-widest text-lg p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500" 
-              placeholder="----"
+              placeholder=""
               maxLength={4}
             />
           </div>

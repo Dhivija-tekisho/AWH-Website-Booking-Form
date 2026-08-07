@@ -199,7 +199,7 @@ export function StepDetails({
           required
           value={details.name}
           autoComplete="name"
-          placeholder={t('details.fullName.placeholder')}
+          placeholder=""
           onChange={(e) => onChange({ name: e.target.value })}
         />
 
@@ -210,7 +210,7 @@ export function StepDetails({
           min={0}
           max={120}
           value={details.age}
-          placeholder={t('details.age.placeholder')}
+          placeholder=""
           onChange={(e) => onChange({ age: e.target.value })}
         />
 
@@ -232,7 +232,7 @@ export function StepDetails({
                 type="tel"
                 autoComplete="tel"
                 value={phone}
-                placeholder={t('verify.phone.placeholder')}
+                placeholder=""
                 onChange={(e) => onChange({ phone: e.target.value })}
               />
             </div>
@@ -254,7 +254,7 @@ export function StepDetails({
           inputMode="text"
           autoComplete="one-time-code"
           value={otp}
-          placeholder={t('verify.otp.placeholder')}
+          placeholder=""
           disabled={!otpSent}
           onChange={(e) => onOtpChange?.(e.target.value)}
         />

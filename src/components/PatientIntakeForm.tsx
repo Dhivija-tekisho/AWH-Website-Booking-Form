@@ -42,7 +42,7 @@ export default function PatientIntakeForm({ onSubmit }: PatientIntakeFormProps) 
               value={formData.fullName}
               onChange={handleChange}
               className="w-full text-sm p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500" 
-              placeholder="e.g. Ramesh Kumar"
+              placeholder=""
             />
           </div>
           <div className="flex gap-3">
@@ -54,7 +54,7 @@ export default function PatientIntakeForm({ onSubmit }: PatientIntakeFormProps) 
                 value={formData.age}
                 onChange={handleChange}
                 className="w-full text-sm p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500" 
-                placeholder="45"
+                placeholder=""
               />
             </div>
             <div className="flex-1">
@@ -82,7 +82,7 @@ export default function PatientIntakeForm({ onSubmit }: PatientIntakeFormProps) 
                 value={formData.mobileNumber}
                 onChange={handleChange}
                 className="w-full text-sm p-2 focus:outline-none" 
-                placeholder="90000 00000"
+                placeholder=""
               />
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function PatientIntakeForm({ onSubmit }: PatientIntakeFormProps) 
               value={formData.otp}
               onChange={handleChange}
               className="w-full text-center tracking-widest text-lg p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500" 
-              placeholder="----"
+              placeholder=""
               maxLength={4}
             />
           </div>

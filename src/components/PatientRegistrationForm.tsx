@@ -36,7 +36,7 @@ export default function PatientRegistrationForm({ onSubmit }: PatientRegistratio
             value={formData.fullName}
             onChange={handleChange}
             className="w-full text-sm p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500" 
-            placeholder="e.g. Ramesh Kumar"
+            placeholder=""
             required
           />
         </div>
@@ -49,7 +49,7 @@ export default function PatientRegistrationForm({ onSubmit }: PatientRegistratio
               value={formData.age}
               onChange={handleChange}
               className="w-full text-sm p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500" 
-              placeholder="45"
+              placeholder=""
               required
             />
           </div>
@@ -77,7 +77,7 @@ export default function PatientRegistrationForm({ onSubmit }: PatientRegistratio
             value={formData.email}
             onChange={handleChange}
             className="w-full text-sm p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500" 
-            placeholder="ramesh@example.com"
+            placeholder=""
             required
           />
         </div>
@@ -88,7 +88,7 @@ export default function PatientRegistrationForm({ onSubmit }: PatientRegistratio
             value={formData.reasonForVisit}
             onChange={handleChange}
             className="w-full text-sm p-2 border border-gray-200 rounded-md focus:outline-none focus:border-emerald-500 resize-none h-20" 
-            placeholder="E.g., Diabetic foot ulcer on right heel"
+            placeholder=""
             required
           />
         </div>

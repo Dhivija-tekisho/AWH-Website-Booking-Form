@@ -110,7 +110,7 @@ export function ExistingVerifyModal({ open, onClose, onVerified }: Props) {
               type="tel"
               autoComplete="tel"
               value={phone}
-              placeholder={t('verify.phone.placeholder')}
+              placeholder=""
               onChange={(e) => {
                 setPhone(e.target.value);
                 setOtpSent(false);
@@ -140,7 +140,7 @@ export function ExistingVerifyModal({ open, onClose, onVerified }: Props) {
             inputMode="text"
             autoComplete="one-time-code"
             value={otp}
-            placeholder={t('verify.otp.placeholder')}
+            placeholder=""
             disabled={!otpSent}
             onChange={(e) => {
               setOtp(e.target.value);

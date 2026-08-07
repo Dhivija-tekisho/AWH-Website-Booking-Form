@@ -1,5 +1,4 @@
-import React from 'react';
-import { User, Phone, Stethoscope, Calendar, MapPin, FileText, CheckCircle2 } from 'lucide-react';
+import { User, Phone, Stethoscope, Calendar, CheckCircle2 } from 'lucide-react';
 
 interface BookingConfirmationCardProps {
   details: {
