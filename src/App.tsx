@@ -1,11 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { MessageCircle, Mic, Send, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, FileText, Activity, AlertCircle, Wind } from 'lucide-react';
-import { CLINIC, doctorName, departmentName } from '@/booking';
-import { BookingWizard } from '@/components/booking/BookingWizard';
-import { LanguageToggle, useLang } from '@/i18n';
-import { apiClient } from '@/api/apiClient';
-import type { FormRequest } from '@/api/apiClient';
+import { MessageCircle, Mic, Send, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, Activity, AlertCircle, Wind } from 'lucide-react';
+
 import './App.css';
 
 type Language = 'en' | 'hi' | 'te';
@@ -15,30 +11,10 @@ interface Translations {
   subtitle: string;
   welcomeMessage: ReactNode;
   bookAppointment: string;
-  askNameIntro: ReactNode;
-  askAiQuestion: string;
-  aiResponse: string;
-  suggestionPills: string[];
-  inputPlaceholder: string;
   stepPrompts: {
-    selectCategory: string;
-    uploadImage: string;
-    uploadBtn: string;
-    skipPhotoBtn: string;
-    selectStatus: string;
-    selectSpecialist: string;
-    selectSlot: string;
-    enterDetails: string;
-    manualBookingPrompt: string;
     confirmationTitle: string;
     clinicAddress: string;
-    prepInstructionsTitle: string;
-    prepInstructionsText: string;
-    bookNewBtn: string;
   };
-  statuses: string[];
-  specialists: { name: string; title: string; exp: string }[];
-  slots: string[];
 }
 
 const translations: Record<Language, Translations> = {
@@ -51,55 +27,10 @@ const translations: Record<Language, Translations> = {
       </div>
     ),
     bookAppointment: 'Book appointment',
-    askNameIntro: (
-      <div>
-        <p>I'd be happy to help with that.</p>
-        <p className="mt-2">Before we proceed, may I know your full name?</p>
-      </div>
-    ),
-    askAiQuestion: '💬 Ask AI Specialist a Question',
-    aiResponse: "Thank you for asking Asha AI Specialist. For non-healing wounds or diabetic foot concerns, hyperbaric oxygen therapy (HBOT) and specialized vascular assessment are highly recommended. Would you like to book an appointment with our specialist?",
-    suggestionPills: [
-      "My wound isn't healing",
-      "Diabetic foot care",
-      "Told I might lose my leg",
-      "What is HBOT?",
-      "Book an appointment",
-      "Where are you located?"
-    ],
-    inputPlaceholder: 'Type your question..',
     stepPrompts: {
-      selectCategory: "Please select the treatment category that best matches your medical condition:",
-      uploadImage: "To help our specialists perform an initial assessment before your consultation, please upload a clear image of the wound (or select an option below):",
-      uploadBtn: "📷 Upload Wound Photo",
-      skipPhotoBtn: "⏭️ Skip Photo for Now",
-      selectStatus: "Please select the current status/condition of the wound:",
-      selectSpecialist: "Based on your selected category, here are our available specialists at AWH Clinic. Please select a doctor:",
-      selectSlot: "Please select a preferred consultation time slot:",
-      enterDetails: "Almost done! Please type the patient's Full Name, Age, and Phone Number (e.g. Ramesh Kumar, 45, 9876543210):",
-      manualBookingPrompt: "Please provide the patient's Full Name, Age, and Phone Number (e.g. Ramesh Kumar, 45, 9876543210) to begin booking:",
       confirmationTitle: "🎉 Appointment Confirmed!",
       clinicAddress: "AWH Advanced Wound Healing Clinic, Jubilee Hills, Hyderabad",
-      prepInstructionsTitle: "Preparation Instructions:",
-      prepInstructionsText: "Please arrive 15 minutes before your scheduled appointment time. Bring all prior medical reports and dressing records.",
-      bookNewBtn: "🔄 Book Another Appointment"
-    },
-    statuses: [
-      "Mild / Surface Wound",
-      "Non-Healing Chronic Ulcer",
-      "Painful / Swollen / Infection Risk",
-      "Severe Bleeding / Acute Trauma"
-    ],
-    specialists: [
-      { name: "Dr. Ramesh Kumar", title: "Senior Vascular & Wound Specialist", exp: "15+ Yrs Exp" },
-      { name: "Dr. Priya Sharma", title: "Podiatrist & Diabetic Foot Specialist", exp: "12+ Yrs Exp" },
-      { name: "Dr. Vikram Mehta", title: "Plastic & Burn Injury Specialist", exp: "14+ Yrs Exp" }
-    ],
-    slots: [
-      "Today at 4:00 PM",
-      "Tomorrow at 10:30 AM",
-      "Tomorrow at 2:30 PM"
-    ]
+    }
   },
   hi: {
     online: 'ऑनलाइन',
@@ -112,56 +43,10 @@ const translations: Record<Language, Translations> = {
       </div>
     ),
     bookAppointment: 'अपॉइंटमेंट बुक करें',
-    askNameIntro: (
-      <div>
-        <p>मुझे इसमें आपकी मदद करने में खुशी होगी।</p>
-        <p className="mt-2">आगे बढ़ने से पहले, क्या मैं आपका पूरा नाम जान सकती हूँ?</p>
-      </div>
-    ),
-    askAiQuestion: '💬 AI विशेषज्ञ से प्रश्न पूछें',
-    aiResponse: "आशा AI विशेषज्ञ से पूछने के लिए धन्यवाद। न भरने वाले घावों या डायबिटीज पैर की समस्याओं के लिए, हाइपरबेरिक ऑक्सीजन थेरेपी (HBOT) और संवहनी मूल्यांकन (vascular assessment) की अत्यधिक सिफारिश की जाती है। क्या आप हमारे विशेषज्ञ के साथ अपॉइंटमेंट बुक करना चाहेंगे?",
-    suggestionPills: [
-      "डायबिटीज पैर की देखभाल",
-      "न भरने वाले घाव व अल्सर",
-      "जलने की चोटें",
-      "पैर में दर्द व सूजन",
-      "चोट व आघात",
-      "अन्य स्थितियां",
-      "घाव की फोटो अपलोड करें"
-    ],
-    inputPlaceholder: 'अपना उत्तर लिखें...',
     stepPrompts: {
-      selectCategory: "कृपया अपनी चिकित्सा स्थिति से मेल खाने वाली श्रेणी चुनें:",
-      uploadImage: "डॉक्टरों द्वारा शुरुआती आकलन के लिए, कृपया घाव की स्पष्ट तस्वीर अपलोड करें:",
-      uploadBtn: "📷 घाव की फोटो अपलोड करें",
-      skipPhotoBtn: "⏭️ फोटो बाद में अपलोड करें",
-      selectStatus: "कृपया घाव की वर्तमान स्थिति चुनें:",
-      selectSpecialist: "AWH क्लिनिक में उपलब्ध हमारे विशेषज्ञ। कृपया डॉक्टर चुनें:",
-      selectSlot: "कृपया परामर्श का समय चुनें:",
-      enterDetails: "बुकिंग पूरी करने के लिए, अपना नाम, उम्र और फोन नंबर लिखें (जैसे: रमेश कुमार, 45, 9876543210):",
-      manualBookingPrompt: "बुकिंग शुरू करने के लिए, कृपया मरीज का पूरा नाम, उम्र और फोन नंबर दें (जैसे: रमेश कुमार, 45, 9876543210):",
       confirmationTitle: "🎉 अपॉइंटमेंट की पुष्टि हो गई!",
       clinicAddress: "AWH एडवांस्ड वूंड हीलिंग क्लिनिक, जुबली हिल्स, हैदराबाद",
-      prepInstructionsTitle: "तैयारी के निर्देश:",
-      prepInstructionsText: "कृपया अपने समय से 15 मिनट पहले पहुंचें और पुरानी मेडिकल रिपोर्ट साथ लाएं।",
-      bookNewBtn: "🔄 एक और अपॉइंटमेंट बुक करें"
-    },
-    statuses: [
-      "हल्का घाव",
-      "न भरने वाला अल्सर / बेड सोर",
-      "दर्द / सूजन / इन्फेक्शन",
-      "गंभीर रक्तस्राव / चोट"
-    ],
-    specialists: [
-      { name: "डॉ. रमेश कुमार", title: "वरिष्ठ वूंड विशेषज्ञ", exp: "15+ वर्ष अनुभव" },
-      { name: "डॉ. प्रिया शर्मा", title: "डायबिटीज पैर विशेषज्ञ", exp: "12+ वर्ष अनुभव" },
-      { name: "डॉ. विक्रम मेहता", title: "प्लास्टिक व बर्न विशेषज्ञ", exp: "14+ वर्ष अनुभव" }
-    ],
-    slots: [
-      "आज शाम 4:00 बजे",
-      "कल सुबह 10:30 बजे",
-      "कल दोपहर 2:30 बजे"
-    ]
+    }
   },
   te: {
     online: 'ఆన్‌లైన్',
@@ -174,56 +59,10 @@ const translations: Record<Language, Translations> = {
       </div>
     ),
     bookAppointment: 'అపాయింట్‌మెంట్ బుక్ చేయండి',
-    askNameIntro: (
-      <div>
-        <p>దీనిలో మీకు సహాయం చేయడానికి నేను సంతోషిస్తాను.</p>
-        <p className="mt-2">మనం ముందుకు వెళ్లే ముందు, మీ పూర్తి పేరు తెలుసుకోవచ్చా?</p>
-      </div>
-    ),
-    askAiQuestion: '💬 AI స్పెషలిస్ట్‌ని ప్రశ్నించండి',
-    aiResponse: "ఆశా AI స్పెషలిస్ట్‌ని అడిగినందుకు ధన్యవాదాలు. మానని గాయాలు లేదా డయాబెటిక్ ఫుట్ సమస్యల కోసం, హైపర్‌బారిక్ ఆక్సిజన్ థెరపీ (HBOT) మరియు వాస్కులర్ మూల్యాంకనం ఎంతగానో సిఫార్సు చేయబడ్డాయి. మీరు మా నిపుణుడితో అపాయింట్‌మెంట్ బుక్ చేసుకోవాలనుకుంటున్నారా?",
-    suggestionPills: [
-      "డయాబెటిక్ ఫుట్ కేర్",
-      "మానని గాయాలు & అల్సర్లు",
-      "కాలిన గాయాలు",
-      "కాలు నొప్పి & వాపు",
-      "గాయాలు & దెబ్బలు",
-      "ఇతర సమస్యలు",
-      "గాయం ఫోటో అప్‌లోడ్"
-    ],
-    inputPlaceholder: 'మీ సమాధానాన్ని టైప్ చేయండి...',
     stepPrompts: {
-      selectCategory: "దయచేసి మీ ఆరోగ్య పరిస్థితికి సరిపోయే చికిత్స వర్గాన్ని ఎంచుకోండి:",
-      uploadImage: "వైద్యుల ప్రాథమిక అంచనా కోసం, దయచేసి గాయం యొక్క స్పష్టమైన చిత్రాన్ని అప్‌లోడ్ చేయండి:",
-      uploadBtn: "📷 గాయం ఫోటోను అప్‌లోడ్ చేయండి",
-      skipPhotoBtn: "⏭️ ప్రస్తుతానికి ఫోటోను దాటవేయండి",
-      selectStatus: "దయచేసి గాయం యొక్క ప్రస్తుత పరిస్థితిని ఎంచుకోండి:",
-      selectSpecialist: "AWH క్లినిక్‌లో అందుబాటులో ఉన్న మా నిపుణులు. దయచేసి ఒక డాక్టర్‌ని ఎంచుకోండి:",
-      selectSlot: "దయచేసి సంప్రదింపు సమయాన్ని ఎంచుకోండి:",
-      enterDetails: "బుకింగ్ పూర్తి చేయడానికి, దయచేసి మీ పూర్తి పేరు, వయస్సు మరియు ఫోన్ నంబర్‌ను టైప్ చేయండి (ఉదా: రమేష్ కుమార్, 45, 9876543210):",
-      manualBookingPrompt: "బుకింగ్ ప్రారంభించడానికి, దయచేసి రోగి పూర్తి పేరు, వయస్సు మరియు ఫోన్ నంబర్‌ను అందించండి (ఉదా: రమేష్ కుమార్, 45, 9876543210):",
       confirmationTitle: "🎉 అపాయింట్‌మెంట్ ధృవీకరించబడింది!",
       clinicAddress: "AWH అడ్వాన్స్‌డ్ ఊండ్ హీలింగ్ క్లినిక్, జూబ్లీ హిల్స్, హైదరాబాద్",
-      prepInstructionsTitle: "సన్నాహక సూచనలు:",
-      prepInstructionsText: "దయచేసి నిర్ణీత సమయానికి 15 నిమిషాల ముందు చేరుకోండి మరియు మునుపటి మెడికల్ రిపోర్టులను తీసుకురావండి.",
-      bookNewBtn: "🔄 మరొక అపాయింట్‌మెంట్ బుక్ చేయండి"
-    },
-    statuses: [
-      "సాధారణ గాయం",
-      "మానని అల్సర్ / బెడ్ సోర్",
-      "నొప్పి / వాపు / ఇన్ఫెక్షన్",
-      "తీవ్రమైన రక్తస్రావం / గాయం"
-    ],
-    specialists: [
-      { name: "డా. రమేష్ కుమార్", title: "సీనియర్ ఊండ్ స్పెషలిస్ట్", exp: "15+ ఏళ్ల అనుభవం" },
-      { name: "డా. ప్రియా శర్మ", title: "డయాబెటిక్ ఫుట్ స్పెషలిస్ట్", exp: "12+ ఏళ్ల అనుభవం" },
-      { name: "డా. విక్రమ్ మెహతా", title: "ప్లాస్టిక్ & బర్న్ స్పెషలిస్ట్", exp: "14+ ఏళ్ల అనుభవం" }
-    ],
-    slots: [
-      "ఈ రోజు సాయంత్రం 4:00 గంటలకు",
-      "రేపు ఉదయం 10:30 గంటలకు",
-      "రేపు మధ్యాహ్నం 2:30 గంటలకు"
-    ]
+    }
   }
 };
 
@@ -277,11 +116,8 @@ function App() {
 
   const conversationIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '70000000-0000-4000-8000-000000000001');
   const threadIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '90000000-0000-4000-8000-000000000001');
-  const [bookingView, setBookingView] = useState<{ active: boolean; patientType?: 'new' | 'existing'; name?: string }>({ active: false });
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const { t: i18nT, setLang: setGlobalLang } = useLang();
   const t = translations[language];
 
 
@@ -292,79 +128,7 @@ function App() {
     }
   }, [messages]);
 
-  const handleBookingComplete = (details: any) => {
-    setBookingView({ active: false });
-    setStep(8); // Mark as complete
 
-    addMessage('bot', (
-      <div className="confirmation-card">
-        <div className="card-header-badge">
-          <CheckCircle2 size={20} className="text-emerald-500" />
-          <span className="card-title">{t.stepPrompts.confirmationTitle}</span>
-        </div>
-
-        <div className="card-body-details">
-          <div className="detail-row">
-            <User size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Patient:</span>
-              <span className="detail-val">{details.name || 'Not provided'} {details.age ? `(${details.age} yrs)` : ''}</span>
-            </div>
-          </div>
-
-          <div className="detail-row">
-            <Phone size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Contact:</span>
-              <span className="detail-val">{details.phone || 'Not provided'}</span>
-            </div>
-          </div>
-
-          {details.doctor && (
-            <div className="detail-row">
-              <Stethoscope size={15} className="detail-icon" />
-              <div>
-                <span className="detail-label">Doctor:</span>
-                <span className="detail-val">
-                  {doctorName(details.doctor.id)}
-                  {details.department ? ` (${departmentName(details.department.id)})` : ''}
-                </span>
-              </div>
-            </div>
-          )}
-
-          <div className="detail-row">
-            <Calendar size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Date & Time:</span>
-              <span className="detail-val">
-                {details.date ? new Date(details.date).toLocaleDateString() : ''} {details.slot ? `at ${details.slot}` : ''}
-              </span>
-            </div>
-          </div>
-
-          <div className="detail-row">
-            <MapPin size={15} className="detail-icon" />
-            <div>
-              <span className="detail-label">Location:</span>
-              <span className="detail-val">{t.stepPrompts.clinicAddress}</span>
-            </div>
-          </div>
-
-          {details.reference && (
-            <div className="detail-row">
-              <FileText size={15} className="detail-icon" />
-              <div>
-                <span className="detail-label">Reference ID:</span>
-                <span className="detail-val font-mono">{details.reference}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-      </div>
-    ));
-  };
 
   // Initialize or reset flow
   const resetWorkflow = () => {
@@ -372,7 +136,7 @@ function App() {
     conversationIdRef.current = genUuid();
     threadIdRef.current = genUuid();
     setStep(1);
-    setCurrentPills(t.suggestionPills);
+    setCurrentPills([]);
     setBookingData({
       category: '',
       imageUrl: null,
@@ -405,15 +169,14 @@ function App() {
 
   useEffect(() => {
     if (messages.length === 0) {
-      setCurrentPills(t.suggestionPills);
+      setCurrentPills([]);
     }
-  }, [t.suggestionPills, messages.length]);
+  }, [messages.length]);
 
   const toggleWidget = () => setIsOpen(!isOpen);
   const toggleVoice = () => setIsVoiceEnabled(!isVoiceEnabled);
   const selectLanguage = (lang: Language) => {
     setLanguage(lang);
-    setGlobalLang(lang);
     setIsLangMenuOpen(false);
   };
 
@@ -423,115 +186,19 @@ function App() {
 
 
 
-const DynamicBackendFormCard = ({
-  form,
-  onSubmit,
-}: {
-  form: FormRequest;
-  onSubmit: (answers: Record<string, string>) => void;
-}) => {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-
-  return (
-    <div className="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm mt-2 space-y-3">
-      {form.title && <h4 className="font-semibold text-emerald-950 text-sm">{form.title}</h4>}
-      {form.reason && <p className="text-xs text-gray-600">{form.reason}</p>}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmit(answers);
-        }}
-        className="space-y-3"
-      >
-        {form.fields.map((field) => (
-          <div key={field.name} className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-gray-700">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
-            </label>
-            {field.type === 'select' ? (
-              <select
-                className="w-full text-xs p-2 bg-emerald-50/50 border border-emerald-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                value={answers[field.name] || ''}
-                onChange={(e) => setAnswers({ ...answers, [field.name]: e.target.value })}
-                required={field.required}
-              >
-                <option value="">Select option...</option>
-                {field.options?.map((opt, i) => (
-                  <option key={i} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type={field.type === 'tel' ? 'tel' : field.type === 'email' ? 'email' : field.type === 'date' ? 'date' : 'text'}
-                className="w-full text-xs p-2 bg-emerald-50/50 border border-emerald-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                placeholder=""
-                value={answers[field.name] || ''}
-                onChange={(e) => setAnswers({ ...answers, [field.name]: e.target.value })}
-                required={field.required}
-              />
-            )}
-          </div>
-        ))}
-        <button
-          type="submit"
-          className="w-full py-2 px-3 bg-[#113227] hover:bg-[#043b2d] text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
-        >
-          Submit Form
-        </button>
-      </form>
-    </div>
-  );
-};
-
   // Step 7: Handle text input details or AI question
-  const callLLM = async (userMessage: string) => {
+  const callLLM = async (_userMessage: string) => {
     setIsLoading(true);
     setCurrentPills([]);
     try {
-      // Send natural language message directly to AI Orchestration Engine on port 3001 using persistent session IDs
-      const aiRes = await apiClient.sendChatMessage(userMessage, conversationIdRef.current, threadIdRef.current);
-      if (aiRes && aiRes.response) {
-        addMessage('bot', (
-          <div>
-            <p className="text-sm whitespace-pre-wrap">{aiRes.response}</p>
-            {aiRes.form && (
-              <DynamicBackendFormCard
-                form={aiRes.form}
-                onSubmit={async (answers) => {
-                  addMessage('user', `Submitted form details`);
-                  setIsLoading(true);
-                  try {
-                    const followUp = await apiClient.sendChatMessage(undefined, conversationIdRef.current, threadIdRef.current, answers);
-                    if (followUp && followUp.response) {
-                      addMessage('bot', followUp.response);
-                    }
-                  } catch (err) {
-                    console.error('Form submit error:', err);
-                  } finally {
-                    setIsLoading(false);
-                  }
-                }}
-              />
-            )}
-          </div>
-        ));
-
-        if (aiRes.suggestedActions && aiRes.suggestedActions.length > 0) {
-          setCurrentPills(aiRes.suggestedActions);
-        } else {
-          setCurrentPills([
-            "Tell me more",
-            "What treatments are available?",
-            "Book an appointment",
-            "Where is the clinic?"
-          ]);
-        }
-      }
+      // Dummy timeout to simulate AI processing since the API client was removed
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      addMessage(
+        'bot',
+        "I'm sorry, my orchestration backend is currently disconnected. However, the interface is fully working!"
+      );
     } catch (e) {
       console.error('AI chat endpoint error:', e);
-      addMessage('bot', "I'm sorry, I had trouble connecting to the care assistant server. Please ensure the backend server is running on port 3001 or try sending your message again.");
     } finally {
       setIsLoading(false);
     }
@@ -561,43 +228,7 @@ const DynamicBackendFormCard = ({
     return <CheckCircle2 size={16} className={iconCls} />;
   };
 
-  if (bookingView.active) {
-    return (
-      <main className="mx-auto flex min-h-dvh sm:min-h-[85vh] sm:max-h-[90vh] sm:my-6 max-w-3xl flex-col overflow-y-auto overflow-x-hidden sm:overflow-hidden px-0 py-0 sm:px-6 sm:py-6 bg-white sm:rounded-2xl sm:shadow-2xl sm:border sm:border-emerald/10">
-        <header className="relative mb-3 flex-none text-center sm:mb-4 px-3 pt-3 sm:px-0 sm:pt-0">
-          <div className="absolute left-0 top-0">
-            <button
-              onClick={() => setBookingView({ active: false })}
-              className="flex items-center gap-1 text-xs font-medium text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-md transition-colors border border-emerald-200"
-            >
-              ← Back to Chat
-            </button>
-          </div>
-          <div className="absolute right-0 top-0">
-            <LanguageToggle />
-          </div>
-          <p className="text-[0.75rem] font-semibold uppercase tracking-widest text-jade">
-            {i18nT('app.eyebrow')}
-          </p>
-          <h1 className="mt-1 text-[clamp(1.55rem,4vw,2.15rem)] font-semibold text-ink">
-            {i18nT('app.title')}
-          </h1>
-          <p className="mt-0.5 text-[0.88rem] text-ink-soft">{CLINIC.name}</p>
-        </header>
-        <div className="min-h-0 flex-1 px-3 pb-3 sm:px-0 sm:pb-0">
-          <BookingWizard
-            initialOverrides={{
-              patientType: bookingView.patientType,
-              name: bookingView.name || '',
-              step: bookingView.patientType === 'new' ? 2 : 1,
-              openVerifyOnMount: bookingView.patientType === 'existing',
-            }}
-            onBookingComplete={handleBookingComplete}
-          />
-        </div>
-      </main>
-    );
-  }
+
 
   return (
     <div className="h-[100dvh] md:min-h-screen flex flex-col bg-[#fcfaf5] font-sans selection:bg-[#cca66a] selection:text-white">
