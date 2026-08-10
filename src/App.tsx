@@ -81,6 +81,75 @@ interface Message {
   actionButtons?: ReactNode;
 }
 
+export interface FormField {
+  name: string;
+  label: string;
+  type: 'text' | 'email' | 'tel' | 'date' | 'select';
+  required: boolean;
+  options?: string[];
+}
+
+export interface FormRequest {
+  formId: string;
+  title: string;
+  reason: string;
+  fields: FormField[];
+}
+
+export interface TurnResult {
+  reply: string;
+  form: FormRequest | null;
+  workflowId: string;
+  conversationId: string;
+}
+
+function DynamicForm({ form, onSubmit }: { form: FormRequest, onSubmit: (answers: Record<string, string>) => void }) {
+  const [formData, setFormData] = useState<Record<string, string>>({});
+
+  const handleChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-3 w-full">
+      <div className="font-semibold text-[#043b2d] text-sm">{form.title}</div>
+      <div className="text-xs text-gray-500 mb-1">{form.reason}</div>
+      {form.fields.map(f => (
+        <div key={f.name} className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-gray-700">{f.label} {f.required && '*'}</label>
+          {f.type === 'select' ? (
+             <select 
+               required={f.required}
+               value={formData[f.name] || ''}
+               onChange={e => handleChange(f.name, e.target.value)}
+               className="w-full bg-[#f8f9fa] border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#cca66a] transition-colors"
+             >
+               <option value="">Select...</option>
+               {f.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+             </select>
+          ) : (
+             <input 
+               type={f.type} 
+               required={f.required}
+               value={formData[f.name] || ''}
+               onChange={e => handleChange(f.name, e.target.value)}
+               className="w-full bg-[#f8f9fa] border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#cca66a] transition-colors"
+             />
+          )}
+        </div>
+      ))}
+      <button type="submit" className="mt-2 w-full bg-[#113227] hover:bg-[#043b2d] text-white py-2 rounded-lg text-sm font-medium transition-colors">
+        Submit
+      </button>
+    </form>
+  );
+}
+
 interface BookingData {
   category: string;
   imageUrl: string | null;
@@ -180,28 +249,54 @@ function App() {
     setIsLangMenuOpen(false);
   };
 
-  const addMessage = (role: Role, content: ReactNode) => {
-    setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content }]);
+  const addMessage = (role: Role, content: ReactNode, actionButtons?: ReactNode) => {
+    setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content, actionButtons }]);
   };
 
 
 
   // Step 7: Handle text input details or AI question
-  const callLLM = async (_userMessage: string) => {
+  const callLLM = async (userMessage?: string, formAnswers?: Record<string, string>) => {
     setIsLoading(true);
     setCurrentPills([]);
     try {
-      // Dummy timeout to simulate AI processing since the API client was removed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addMessage(
-        'bot',
-        "I'm sorry, my orchestration backend is currently disconnected. However, the interface is fully working!"
-      );
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: '30000000-0000-0000-0000-000000000001',
+          threadId: threadIdRef.current,
+          conversationId: conversationIdRef.current,
+          text: userMessage,
+          formAnswers: formAnswers,
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data: TurnResult = await response.json();
+      
+      let content: ReactNode = data.reply;
+      let actionButtons: ReactNode = undefined;
+      
+      if (data.form) {
+        actionButtons = <DynamicForm form={data.form} onSubmit={handleFormSubmit} />;
+      }
+
+      addMessage('bot', content, actionButtons);
     } catch (e) {
       console.error('AI chat endpoint error:', e);
+      addMessage('bot', 'Sorry, I am having trouble connecting to the server. Please ensure the backend is running.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFormSubmit = (answers: Record<string, string>) => {
+    addMessage('user', 'Form submitted.');
+    callLLM(undefined, answers);
   };
 
   const handleSend = (text: string, _isFromPill: boolean = false) => {
