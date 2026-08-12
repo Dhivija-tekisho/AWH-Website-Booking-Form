@@ -4,6 +4,142 @@ import { MessageCircle, Mic, Send, ChevronDown, Upload, CheckCircle2, Calendar, 
 
 import './App.css';
 
+// ─── Lightweight Markdown Renderer ──────────────────────────────────────────
+
+/** Parse inline markdown: **bold**, *italic*, `code`, [text](url) */
+function renderInline(text: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  // Combined regex for inline tokens
+  const inlineRe = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|__[^_]+__|_[^_]+_|\[[^\]]+\]\([^)]+\))/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let keyIdx = 0;
+
+  while ((match = inlineRe.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const token = match[0];
+    if (token.startsWith('`') && token.endsWith('`')) {
+      parts.push(<code key={keyIdx++} className="bg-emerald-50 text-emerald-800 font-mono text-[12px] px-1.5 py-0.5 rounded border border-emerald-200">{token.slice(1, -1)}</code>);
+    } else if ((token.startsWith('**') && token.endsWith('**')) || (token.startsWith('__') && token.endsWith('__'))) {
+      parts.push(<strong key={keyIdx++} className="font-semibold text-[#124d3c]">{renderInline(token.slice(2, -2))}</strong>);
+    } else if ((token.startsWith('*') && token.endsWith('*')) || (token.startsWith('_') && token.endsWith('_'))) {
+      parts.push(<em key={keyIdx++}>{renderInline(token.slice(1, -1))}</em>);
+    } else if (token.startsWith('[')) {
+      const linkMatch = token.match(/\[([^\]]+)\]\(([^)]+)\)/);
+      if (linkMatch) {
+        parts.push(<a key={keyIdx++} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline underline-offset-2 hover:text-emerald-900 transition-colors">{linkMatch[1]}</a>);
+      }
+    }
+    lastIndex = match.index + token.length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
+
+function MarkdownRenderer({ text }: { text: string }) {
+  const lines = text.split(/\r?\n/);
+  const elements: ReactNode[] = [];
+  let i = 0;
+  let keyCount = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // ── Fenced code block
+    if (line.startsWith('```')) {
+      const lang = line.slice(3).trim();
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      elements.push(
+        <pre key={keyCount++} className="my-2 p-3 bg-[#0f1c16] rounded-xl overflow-x-auto text-xs font-mono text-emerald-200 border border-emerald-900/40 shadow-inner">
+          {lang && <span className="block text-[10px] text-emerald-500 mb-1 uppercase tracking-wider">{lang}</span>}
+          <code>{codeLines.join('\n')}</code>
+        </pre>
+      );
+      i++;
+      continue;
+    }
+
+    // ── Heading H1
+    if (/^# /.test(line)) {
+      elements.push(<h1 key={keyCount++} className="text-base font-bold text-[#0b382b] mt-3 mb-1 border-b border-emerald-200 pb-1">{renderInline(line.slice(2))}</h1>);
+      i++; continue;
+    }
+    // ── Heading H2
+    if (/^## /.test(line)) {
+      elements.push(<h2 key={keyCount++} className="text-[13px] font-bold text-[#124d3c] mt-2.5 mb-1">{renderInline(line.slice(3))}</h2>);
+      i++; continue;
+    }
+    // ── Heading H3
+    if (/^### /.test(line)) {
+      elements.push(<h3 key={keyCount++} className="text-[12.5px] font-semibold text-[#124d3c] mt-2 mb-0.5">{renderInline(line.slice(4))}</h3>);
+      i++; continue;
+    }
+
+    // ── Horizontal rule
+    if (/^---+$/.test(line.trim())) {
+      elements.push(<hr key={keyCount++} className="border-emerald-200/70 my-2" />);
+      i++; continue;
+    }
+
+    // ── Unordered list block
+    if (/^[\-\*\+] /.test(line)) {
+      const items: ReactNode[] = [];
+      while (i < lines.length && /^[\-\*\+] /.test(lines[i])) {
+        items.push(
+          <li key={i} className="flex items-start gap-2 text-[13px] text-[#2d3748] leading-relaxed">
+            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+            <span>{renderInline(lines[i].replace(/^[\-\*\+] /, ''))}</span>
+          </li>
+        );
+        i++;
+      }
+      elements.push(<ul key={keyCount++} className="my-1.5 pl-1 space-y-1">{items}</ul>);
+      continue;
+    }
+
+    // ── Ordered list block
+    if (/^\d+[\.\)] /.test(line)) {
+      const items: ReactNode[] = [];
+      let num = 1;
+      while (i < lines.length && /^\d+[\.\)] /.test(lines[i])) {
+        items.push(
+          <li key={i} className="flex items-start gap-2 text-[13px] text-[#2d3748] leading-relaxed">
+            <span className="mt-0.5 min-w-[18px] h-[18px] rounded-full bg-emerald-700 text-white text-[10px] font-bold flex items-center justify-center shrink-0">{num++}</span>
+            <span>{renderInline(lines[i].replace(/^\d+[\.\)] /, ''))}</span>
+          </li>
+        );
+        i++;
+      }
+      elements.push(<ol key={keyCount++} className="my-1.5 pl-1 space-y-1.5">{items}</ol>);
+      continue;
+    }
+
+    // ── Blank line → spacer
+    if (line.trim() === '') {
+      elements.push(<div key={keyCount++} className="h-1.5" />);
+      i++; continue;
+    }
+
+    // ── Regular paragraph
+    elements.push(
+      <p key={keyCount++} className="text-[13.5px] text-[#2d3748] leading-relaxed">
+        {renderInline(line)}
+      </p>
+    );
+    i++;
+  }
+
+  return <div className="space-y-0.5">{elements}</div>;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 type Language = 'en' | 'hi' | 'te';
 
 interface Translations {
@@ -289,21 +425,17 @@ interface RichBotMessageProps {
   content: string;
   language: Language;
   onSelectSlot: (slot: string) => void;
-  onSubmitPatientDetails: (name: string, email: string, phone: string) => void;
-  onSubmitDobGender: (dob: string, gender: string) => void;
+  onSubmitRegistration: (name: string, email: string, dob: string, gender: string) => void;
   onBookAnother: () => void;
 }
 
-const RichBotMessage = ({ content, language, onSelectSlot, onSubmitPatientDetails, onSubmitDobGender, onBookAnother }: RichBotMessageProps) => {
+const RichBotMessage = ({ content, language, onSelectSlot, onSubmitRegistration, onBookAnother }: RichBotMessageProps) => {
   const t = translations[language];
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
-  const [formPhone, setFormPhone] = useState('');
-  const [formSubmitted, setFormSubmitted] = useState(false);
-
-  const [dob, setDob] = useState('1995-05-15');
+  const [dob, setDob] = useState('');
   const [gender, setGender] = useState('male');
-  const [dobGenderSubmitted, setDobGenderSubmitted] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   const rawSlotMatches = Array.from(content.matchAll(/(\d{1,2}:\d{2}\s*(?:AM|PM)(?:\s*(?:to|-)\s*\d{1,2}:\d{2}\s*(?:AM|PM))?)/gi)).map(m => m[1]);
   const uniqueSlots = Array.from(new Set(rawSlotMatches)).filter(s => s.length >= 6);
@@ -321,26 +453,35 @@ const RichBotMessage = ({ content, language, onSelectSlot, onSubmitPatientDetail
   const docMatch = content.match(/(Dr\.\s+[A-Za-z\s]+?)(?=\s+on|\s+has|\s+at|,|\.|$)/i);
   const doctorName = docMatch ? docMatch[1] : null;
 
-  const isAskingRegistration = /full name|share your full name|email address|phone number|रोगी विवरण|రోగి వివరాలు/i.test(content) && !isConfirmed && !isCancelled && !isRescheduled;
-  const isAskingDobGender = /date of birth|dob|gender|जन्म तिथि|పుట్టిన తేదీ/i.test(content) && !isConfirmed && !isCancelled && !isRescheduled;
+  const isAskingRegistration = /full name|share your full name|email address|date of birth|dob|gender/i.test(content) && !isConfirmed && !isCancelled && !isRescheduled;
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formPhone.trim() && !formName.trim()) return;
+    if (!formName.trim() && !formEmail.trim()) return;
     setFormSubmitted(true);
-    onSubmitPatientDetails(formName, formEmail, formPhone);
+    onSubmitRegistration(formName, formEmail, dob, gender);
   };
 
-  const handleDobGenderSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setDobGenderSubmitted(true);
-    onSubmitDobGender(dob, gender);
-  };
+  // Always strip time-range lines and date-only bullet headers from the displayed markdown.
+  // Slots are shown exclusively via the chip grid below — never in raw text.
+  const filteredContent = content
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim();
+      // Remove lines that are purely a time range: "- 09:20 AM - 09:40 AM"
+      if (/^[-\u2022*\s]*\d{1,2}:\d{2}\s*(?:AM|PM)/i.test(trimmed)) return false;
+      // Remove date-only bullet lines: "• August 7, 2026" / "**August 7, 2026**"
+      if (/^[-\u2022*\s]*\*{0,2}(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}\*{0,2}\s*$/i.test(trimmed)) return false;
+      return true;
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 
   return (
     <div className="space-y-2.5">
-      <div className="leading-relaxed text-[13.5px] text-[#2d3748]">
-        {content}
+      <div className="leading-relaxed">
+        <MarkdownRenderer text={filteredContent} />
       </div>
 
       {/* 1. Time Slot Selector Pills */}
@@ -365,78 +506,60 @@ const RichBotMessage = ({ content, language, onSelectSlot, onSubmitPatientDetail
         </div>
       )}
 
-      {/* 2. Patient Details Registration Form */}
+      {/* Patient Registration Form Card */}
       {isAskingRegistration && !formSubmitted && (
-        <form onSubmit={handleFormSubmit} className="mt-2.5 p-3.5 bg-gradient-to-br from-white to-emerald-50/60 rounded-xl border border-emerald-200 shadow-xs space-y-2">
+        <form onSubmit={handleFormSubmit} className="mt-2.5 p-3.5 bg-gradient-to-br from-white to-emerald-50/60 rounded-xl border border-emerald-200 shadow-xs space-y-3">
           <div className="flex items-center gap-1.5 font-bold text-xs text-[#124d3c] mb-1">
             <UserCheck size={16} className="text-emerald-600" />
-            <span>{t.quickPatientDetails}</span>
+            <span>Patient Registration Details</span>
           </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <input
-              type="tel"
-              placeholder={t.phonePlaceholder}
-              value={formPhone}
-              onChange={(e) => setFormPhone(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            />
-            <input
-              type="text"
-              placeholder={t.namePlaceholder}
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            />
-          </div>
-          <input
-            type="email"
-            placeholder={t.emailPlaceholder}
-            value={formEmail}
-            onChange={(e) => setFormEmail(e.target.value)}
-            className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          />
-          <button
-            type="submit"
-            className="w-full mt-1 bg-[#124d3c] hover:bg-[#0b382b] text-white py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.98]"
-          >
-            <span>{t.submitDetails}</span>
-            <Send size={12} />
-          </button>
-        </form>
-      )}
-
-      {/* 3. Date of Birth & Gender Registration Card */}
-      {isAskingDobGender && !dobGenderSubmitted && (
-        <form onSubmit={handleDobGenderSubmit} className="mt-2.5 p-3.5 bg-gradient-to-br from-white to-emerald-50/60 rounded-xl border border-emerald-200 shadow-xs space-y-2.5">
-          <div className="flex items-center gap-1.5 font-bold text-xs text-[#124d3c]">
-            <Calendar size={16} className="text-emerald-600" />
-            <span>{t.dobGenderTitle}</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">{t.dobLabel}</label>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1">Full Name *</label>
+              <input
+                type="text"
+                required
+                placeholder="E.g. Jane Doe"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1">Email Address *</label>
+              <input
+                type="email"
+                required
+                placeholder="jane@example.com"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1">Date of Birth</label>
               <input
                 type="date"
+                required
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
                 className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
-
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">{t.genderLabel}</label>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1">Gender</label>
               <div className="flex gap-1.5">
                 {[
-                  { key: 'male', label: t.male },
-                  { key: 'female', label: t.female },
-                  { key: 'other', label: t.other }
+                  { key: 'male', label: 'Male' },
+                  { key: 'female', label: 'Female' },
+                  { key: 'other', label: 'Other' }
                 ].map((item) => (
                   <button
                     type="button"
                     key={item.key}
                     onClick={() => setGender(item.key)}
-                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold capitalize border transition-all cursor-pointer ${
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                       gender === item.key
                         ? 'bg-[#124d3c] text-white border-[#124d3c] shadow-xs'
                         : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50'
@@ -448,12 +571,12 @@ const RichBotMessage = ({ content, language, onSelectSlot, onSubmitPatientDetail
               </div>
             </div>
           </div>
-
+          
           <button
             type="submit"
-            className="w-full mt-1 bg-[#124d3c] hover:bg-[#0b382b] text-white py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.98]"
+            className="w-full mt-2 bg-[#124d3c] hover:bg-[#0b382b] text-white py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.98]"
           >
-            <span>{t.submitRegistration}</span>
+            <span>Submit Registration</span>
             <Send size={12} />
           </button>
         </form>
@@ -545,8 +668,16 @@ function App() {
     patientPhone: ''
   });
 
-  const conversationIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '70000000-0000-4000-8000-000000000001');
-  const threadIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '90000000-0000-4000-8000-000000000001');
+  const generateId = () => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  const conversationIdRef = useRef<string>(generateId());
+  const threadIdRef = useRef<string>(generateId());
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = translations[language];
@@ -623,25 +754,7 @@ function App() {
     const isCancelled = /successfully cancelled|appointment cancelled|रद्द|రద్దు/i.test(replyText);
     const isRescheduled = /successfully rescheduled|appointment rescheduled|रीशेड्यूल|రీషెడ్యూల్/i.test(replyText);
 
-    // 1. Time slots available (for slot selection)
-    const rawSlotMatches = Array.from(replyText.matchAll(/(\d{1,2}:\d{2}\s*(?:AM|PM)(?:\s*(?:to|-)\s*\d{1,2}:\d{2}\s*(?:AM|PM))?)/gi)).map(m => m[1]);
-    const uniqueSlots = Array.from(new Set(rawSlotMatches)).filter(s => s.length >= 6);
-
-    if (uniqueSlots.length > 0 && !isConfirmed && !isCancelled && !isRescheduled) {
-      return (
-        <div className="flex gap-2 flex-wrap mt-1.5">
-          {uniqueSlots.map((slot, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSend(slot, true)}
-              className="btn-primary !bg-[#113227] hover:!bg-[#043b2d] !text-white !rounded-full text-xs font-semibold px-4 py-2 shadow-sm transition-all cursor-pointer hover:scale-[1.02] active:scale-95 flex items-center justify-center"
-            >
-              <span>{slot}</span>
-            </button>
-          ))}
-        </div>
-      );
-    }
+    // Slot selection is handled inside RichBotMessage chip grid — skip here to avoid duplication.
 
     // 2. Cancellation Confirmation prompt ("Are you sure you would like to cancel...?")
     if (/would like to cancel this appointment|are you sure you want to cancel|रद्द करना चाहते हैं|రద్దు చేయాలనుకుంటున్నారా/i.test(replyText)) {
@@ -912,12 +1025,9 @@ function App() {
                             content={msg.content}
                             language={language}
                             onSelectSlot={(slot) => handleSend(slot, true)}
-                            onSubmitPatientDetails={(name, email, phone) => {
-                              const detailsStr = [phone && `Phone: ${phone}`, name && `Name: ${name}`, email && `Email: ${email}`].filter(Boolean).join(', ');
+                            onSubmitRegistration={(name, email, dob, gender) => {
+                              const detailsStr = [name && `Name: ${name}`, email && `Email: ${email}`, dob && `DOB: ${dob}`, gender && `Gender: ${gender}`].filter(Boolean).join(', ');
                               handleSend(detailsStr, true);
-                            }}
-                            onSubmitDobGender={(dob, gender) => {
-                              handleSend(`DOB: ${dob}, Gender: ${gender}`, true);
                             }}
                             onBookAnother={() => handleSend(t.bookAppointment, true)}
                           />
