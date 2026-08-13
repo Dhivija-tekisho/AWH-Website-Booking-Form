@@ -131,6 +131,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/ai/, '/v1/ai'),
         },
+        '/ws/ai/chat': {
+          target: aiBaseUrl.replace(/^http/, 'ws'),
+          ws: true,
+          changeOrigin: true,
+        },
       },
     },
     resolve: {

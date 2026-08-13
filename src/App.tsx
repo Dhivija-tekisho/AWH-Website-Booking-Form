@@ -339,6 +339,7 @@ interface Message {
   role: Role;
   content: ReactNode;
   actionButtons?: ReactNode;
+  isStreaming?: boolean;
 }
 
 export interface FormField {
@@ -425,7 +426,7 @@ interface RichBotMessageProps {
   content: string;
   language: Language;
   onSelectSlot: (slot: string) => void;
-  onSubmitRegistration: (name: string, email: string, dob: string, gender: string) => void;
+  onSubmitRegistration: (name: string, email: string, phone: string, dob: string, gender: string) => void;
   onBookAnother: () => void;
 }
 
@@ -433,6 +434,7 @@ const RichBotMessage = ({ content, language, onSelectSlot, onSubmitRegistration,
   const t = translations[language];
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
+  const [formPhone, setFormPhone] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('male');
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -453,13 +455,13 @@ const RichBotMessage = ({ content, language, onSelectSlot, onSubmitRegistration,
   const docMatch = content.match(/(Dr\.\s+[A-Za-z\s]+?)(?=\s+on|\s+has|\s+at|,|\.|$)/i);
   const doctorName = docMatch ? docMatch[1] : null;
 
-  const isAskingRegistration = /full name|share your full name|email address|date of birth|dob|gender/i.test(content) && !isConfirmed && !isCancelled && !isRescheduled;
+  const isAskingRegistration = /full name|share your full name|email address|date of birth|dob|gender/i.test(content) && !isConfirmed && !isCancelled && !isRescheduled && !/confirm/i.test(content) && !/issue|error|try again|sorry/i.test(content);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim() && !formEmail.trim()) return;
+    if (!formName.trim() && !formEmail.trim() && !formPhone.trim()) return;
     setFormSubmitted(true);
-    onSubmitRegistration(formName, formEmail, dob, gender);
+    onSubmitRegistration(formName, formEmail, formPhone, dob, gender);
   };
 
   // Always strip time-range lines and date-only bullet headers from the displayed markdown.
@@ -523,6 +525,17 @@ const RichBotMessage = ({ content, language, onSelectSlot, onSubmitRegistration,
                 placeholder="E.g. Jane Doe"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
+                className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-gray-600 mb-1">Phone Number *</label>
+              <input
+                type="tel"
+                required
+                placeholder="e.g. +14155552671"
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
                 className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
             </div>
@@ -678,10 +691,96 @@ function App() {
 
   const conversationIdRef = useRef<string>(generateId());
   const threadIdRef = useRef<string>(generateId());
+  const wsRef = useRef<WebSocket | null>(null);
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const t = translations[language];
 
+  // Manage WebSocket connection
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/ai/chat`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket connected to', wsUrl);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          setIsLoading(false);
+          addMessage('bot', data.error);
+          return;
+        }
+
+        if (data.type === 'chunk') {
+          setIsLoading(false);
+          setMessages(prev => {
+            const last = [...prev];
+            const lastMsg = last[last.length - 1];
+            if (lastMsg && lastMsg.role === 'bot' && lastMsg.isStreaming) {
+              last[last.length - 1] = { ...lastMsg, content: (lastMsg.content as string) + data.content };
+            } else {
+              last.push({ id: Date.now().toString(), role: 'bot', content: data.content, isStreaming: true });
+            }
+            return last;
+          });
+          return;
+        }
+
+        setIsLoading(false);
+        let content: ReactNode = data.reply;
+        let actionButtons: ReactNode = undefined;
+        
+        // Skip empty responses that have no text and no form (tool-call-only turns)
+        if (!data.form && (!data.reply || data.reply.toString().trim() === '')) {
+          return;
+        }
+
+        if (data.form) {
+          actionButtons = <DynamicForm form={data.form} onSubmit={handleFormSubmit} />;
+        } else if (typeof data.reply === 'string') {
+          actionButtons = generateActionButtonsForBotReply(data.reply);
+        }
+
+        setMessages(prev => {
+          const last = [...prev];
+          const lastMsg = last[last.length - 1];
+          if (lastMsg && lastMsg.role === 'bot' && lastMsg.isStreaming) {
+            // Replace the streaming text with the final response text & form
+            last[last.length - 1] = {
+              ...lastMsg,
+              content,
+              actionButtons,
+              isStreaming: false
+            };
+          } else {
+            last.push({ id: Date.now().toString(), role: 'bot', content, actionButtons });
+          }
+          return last;
+        });
+
+      } catch (err) {
+        console.error('Failed to parse WS message', err);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setIsLoading(false);
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
 
   // Auto-scroll chat body to bottom when messages update
   useEffect(() => {
@@ -815,44 +914,24 @@ function App() {
 
   // Step 7: Handle text input details or AI question
   const callLLM = async (userMessage?: string, formAnswers?: Record<string, string>) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      addMessage('bot', 'Connecting to chat... please try again in a moment.');
+      return;
+    }
+    
     setIsLoading(true);
     setCurrentPills([]);
-    try {
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          organizationId: '30000000-0000-0000-0000-000000000001',
-          threadId: threadIdRef.current,
-          conversationId: conversationIdRef.current,
-          text: userMessage,
-          language: language,
-          formAnswers: formAnswers,
-        })
-      });
+    
+    const payload = {
+      organizationId: '30000000-0000-0000-0000-000000000001',
+      threadId: threadIdRef.current,
+      conversationId: conversationIdRef.current,
+      text: userMessage,
+      language: language,
+      formAnswers: formAnswers,
+    };
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data: TurnResult = await response.json();
-      
-      let content: ReactNode = data.reply;
-      let actionButtons: ReactNode = undefined;
-      
-      if (data.form) {
-        actionButtons = <DynamicForm form={data.form} onSubmit={handleFormSubmit} />;
-      } else if (typeof data.reply === 'string') {
-        actionButtons = generateActionButtonsForBotReply(data.reply);
-      }
-
-      addMessage('bot', content, actionButtons);
-    } catch (e) {
-      console.error('AI chat endpoint error:', e);
-      addMessage('bot', 'Sorry, I am having trouble connecting to the server. Please ensure the backend is running.');
-    } finally {
-      setIsLoading(false);
-    }
+    wsRef.current.send(JSON.stringify(payload));
   };
 
   const handleFormSubmit = (answers: Record<string, string>) => {
@@ -1025,8 +1104,8 @@ function App() {
                             content={msg.content}
                             language={language}
                             onSelectSlot={(slot) => handleSend(slot, true)}
-                            onSubmitRegistration={(name, email, dob, gender) => {
-                              const detailsStr = [name && `Name: ${name}`, email && `Email: ${email}`, dob && `DOB: ${dob}`, gender && `Gender: ${gender}`].filter(Boolean).join(', ');
+                            onSubmitRegistration={(name, email, phone, dob, gender) => {
+                              const detailsStr = [name && `Name: ${name}`, email && `Email: ${email}`, phone && `Phone: ${phone}`, dob && `DOB: ${dob}`, gender && `Gender: ${gender}`].filter(Boolean).join(', ');
                               handleSend(detailsStr, true);
                             }}
                             onBookAnother={() => handleSend(t.bookAppointment, true)}
