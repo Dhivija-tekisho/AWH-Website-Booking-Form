@@ -118,7 +118,51 @@ function App() {
   const threadIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '90000000-0000-4000-8000-000000000001');
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const t = translations[language];
+
+  const connectWebSocket = () => {
+    if (wsRef.current) return;
+    const botId = import.meta.env.VITE_BOT_ID;
+    if (!botId) return;
+    const baseUrl = import.meta.env.VITE_AI_ORCHESTRATION_URL || 'http://localhost:3001';
+    const wsBase = baseUrl.replace(/^http/, 'ws');
+    
+    const url = `${wsBase}/ws/chatbot/${botId}?threadId=${encodeURIComponent(threadIdRef.current)}`;
+    const ws = new WebSocket(url);
+    
+    ws.onmessage = (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type === 'ready') {
+           setIsLoading(false);
+        } else if (d.type === 'assistant_message') {
+           addMessage('bot', d.text);
+           setIsLoading(false);
+        } else if (d.type === 'form_request') {
+           const prompt = d.form?.prompt || 'Please provide some information.';
+           addMessage('bot', prompt);
+           setIsLoading(false);
+        } else if (d.type === 'error') {
+           addMessage('bot', 'Something went wrong — please try again.');
+           setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('WS parse error', err);
+      }
+    };
+    
+    ws.onclose = () => {
+      wsRef.current = null;
+    };
+    
+    ws.onerror = () => {
+      setIsLoading(false);
+    };
+    
+    wsRef.current = ws;
+  };
+
 
 
   // Auto-scroll chat body to bottom when messages update
@@ -135,6 +179,10 @@ function App() {
     const genUuid = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `70000000-0000-4000-8000-${Date.now()}`.padEnd(36, '0');
     conversationIdRef.current = genUuid();
     threadIdRef.current = genUuid();
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
     setStep(1);
     setCurrentPills([]);
     setBookingData({
@@ -165,6 +213,8 @@ function App() {
 
   useEffect(() => {
     resetWorkflow();
+    // setTimeout to allow state to settle before connecting
+    setTimeout(connectWebSocket, 50);
   }, [language]);
 
   useEffect(() => {
@@ -187,19 +237,26 @@ function App() {
 
 
   // Step 7: Handle text input details or AI question
-  const callLLM = async (_userMessage: string) => {
+  const callLLM = async (userMessage: string) => {
     setIsLoading(true);
     setCurrentPills([]);
     try {
-      // Dummy timeout to simulate AI processing since the API client was removed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      addMessage(
-        'bot',
-        "I'm sorry, my orchestration backend is currently disconnected. However, the interface is fully working!"
-      );
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        connectWebSocket();
+        // Wait a bit for connection if it was closed
+        setTimeout(() => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'user_message', text: userMessage }));
+          } else {
+            addMessage('bot', 'Connection failed. Please try again.');
+            setIsLoading(false);
+          }
+        }, 500);
+        return;
+      }
+      wsRef.current.send(JSON.stringify({ type: 'user_message', text: userMessage }));
     } catch (e) {
       console.error('AI chat endpoint error:', e);
-    } finally {
       setIsLoading(false);
     }
   };
