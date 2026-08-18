@@ -4,6 +4,54 @@ import { MessageCircle, Mic, Send, Globe, ChevronDown, Upload, CheckCircle2, Cal
 
 import './App.css';
 
+function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
+  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    dob: '',
+    gender: '',
+    state: '',
+    city: '',
+    concern: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const str = `Name: ${formData.name}, Email: ${formData.email}, DOB: ${formData.dob}, Gender: ${formData.gender}, State: ${formData.state}, City: ${formData.city}, Concern: ${formData.concern}`;
+    setSubmitted(true);
+    onSubmit(str);
+  };
+
+  if (submitted) return null;
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-[12px] p-4 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-3 w-full sm:w-[320px]">
+      <h3 className="font-semibold text-[#043b2d] text-[15px] mb-1">Patient Details</h3>
+      <input required type="text" placeholder="Full Name" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+      <input required type="email" placeholder="Email Address" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+      
+      <div className="flex gap-2">
+        <input required type="date" placeholder="Date of Birth" className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+        <select required className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
+          <option value="" disabled>Gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div className="flex gap-2">
+        <input required type="text" placeholder="State (e.g. Telangana)" className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+        <input required type="text" placeholder="City" className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+      </div>
+
+      <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
+      <button type="submit" className="bg-[#cca66a] text-white py-2.5 rounded-[8px] text-[14px] font-bold hover:bg-[#b5925a] transition-colors mt-2">Submit Details</button>
+    </form>
+  );
+}
+
 type Language = 'en' | 'hi' | 'te';
 
 interface Translations {
@@ -137,7 +185,37 @@ function App() {
         if (d.type === 'ready') {
            setIsLoading(false);
         } else if (d.type === 'assistant_message') {
-           addMessage('bot', d.text);
+           const text = d.text || '';
+           const isRegistrationPrompt = text.toLowerCase().includes('what is your full name');
+           let actionButtons: ReactNode = undefined;
+           
+           if (isRegistrationPrompt) {
+             actionButtons = <RegistrationForm onSubmit={(data) => {
+               handleSend(data, false);
+             }} />;
+           }
+
+           // Extract numbered options from the text
+           let displayText = text;
+           const options = [...text.matchAll(/(?:^|\n)\s*(?:\d+\.|-)\s+([^\n]+)/g)].map(m => m[1].trim()).filter(Boolean);
+           if (options.length > 0) {
+             setCurrentPills(options);
+             
+             // Remove the list items from the chat bubble
+             displayText = displayText.replace(/(?:^|\n)\s*(?:\d+\.|-)\s+([^\n]+)/g, '');
+             
+             // Remove redundant "reply with..." instructions
+             displayText = displayText.replace(/Reply with the number.*/gi, '');
+             displayText = displayText.replace(/Please reply with a number.*/gi, '');
+             
+             // Clean up excess newlines
+             displayText = displayText.replace(/\n{3,}/g, '\n\n').trim();
+           }
+
+           if (displayText || actionButtons) {
+             const formattedText = <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div>;
+             addMessage('bot', formattedText, actionButtons);
+           }
            setIsLoading(false);
         } else if (d.type === 'form_request') {
            const prompt = d.form?.prompt || 'Please provide some information.';
@@ -230,8 +308,8 @@ function App() {
     setIsLangMenuOpen(false);
   };
 
-  const addMessage = (role: Role, content: ReactNode) => {
-    setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content }]);
+  const addMessage = (role: Role, content: ReactNode, actionButtons?: ReactNode) => {
+    setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content, actionButtons }]);
   };
 
 
