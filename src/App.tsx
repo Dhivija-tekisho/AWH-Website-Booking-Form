@@ -26,29 +26,84 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
   if (submitted) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-[12px] p-4 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-3 w-full sm:w-[320px]">
-      <h3 className="font-semibold text-[#043b2d] text-[15px] mb-1">Patient Details</h3>
+    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-[12px] p-4 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-[700px] max-w-[100%]">
+      <h3 className="font-semibold text-[#043b2d] text-[15px] mb-1 sm:col-span-3">Patient Details</h3>
       <input required type="text" placeholder="Full Name" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
       <input required type="email" placeholder="Email Address" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+      <input required type="date" placeholder="Date of Birth" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
       
-      <div className="flex gap-2">
-        <input required type="date" placeholder="Date of Birth" className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
-        <select required className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
-          <option value="" disabled>Gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-
-      <div className="flex gap-2">
-        <input required type="text" placeholder="State (e.g. Telangana)" className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
-        <input required type="text" placeholder="City" className="w-1/2 border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
-      </div>
-
-      <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
-      <button type="submit" className="bg-[#cca66a] text-white py-2.5 rounded-[8px] text-[14px] font-bold hover:bg-[#b5925a] transition-colors mt-2">Submit Details</button>
+      <select required className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
+        <option value="" disabled>Gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </select>
+      <input required type="text" placeholder="State (e.g. Telangana)" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+      <input required type="text" placeholder="City" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+      
+      <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="sm:col-span-3 border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
+      <button type="submit" className="sm:col-span-3 bg-[#cca66a] text-white py-2.5 rounded-[8px] text-[14px] font-bold hover:bg-[#b5925a] transition-colors mt-1">Submit Details</button>
     </form>
+  );
+}
+
+function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packageName, oldTime }: { title: string, isSuccess: boolean, referenceId?: string, doctor?: string, when?: string, packageName?: string, oldTime?: string }) {
+  return (
+    <div className={`bg-white border ${isSuccess ? 'border-[#1da851]/40' : 'border-[#cca66a]/40'} rounded-[16px] p-4 my-2 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex flex-col gap-4 w-full sm:w-[340px]`}>
+      <div className="flex items-center gap-2.5 text-[#043b2d]">
+        {isSuccess ? <CheckCircle2 size={22} className="text-[#1da851]" /> : <Calendar size={22} className="text-[#cca66a]" />}
+        <h3 className="font-bold text-[15px]">{title}</h3>
+      </div>
+      
+      <div className="flex flex-col gap-3.5 text-[13.5px] text-gray-700 bg-gray-50/50 p-3 rounded-[12px] border border-gray-100">
+        {referenceId && (
+          <div className="flex flex-col mb-1">
+            <span className="text-[11px] font-bold text-[#cca66a] uppercase tracking-wider mb-0.5">Reference ID</span>
+            <span className="font-mono text-xs text-gray-600 bg-white px-2 py-1 rounded border border-gray-200 w-fit">{referenceId}</span>
+          </div>
+        )}
+        
+        {packageName && (
+          <div className="flex items-start gap-3">
+            <Activity size={16} className="text-[#cca66a] shrink-0 mt-0.5" />
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Service</span>
+              <span className="font-medium leading-snug">{packageName}</span>
+            </div>
+          </div>
+        )}
+        
+        {doctor && (
+          <div className="flex items-start gap-3">
+            <User size={16} className="text-[#cca66a] shrink-0 mt-0.5" />
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Doctor</span>
+              <span className="font-medium leading-snug">{doctor}</span>
+            </div>
+          </div>
+        )}
+        
+        {oldTime && (
+          <div className="flex items-start gap-3 opacity-60">
+            <Calendar size={16} className="text-gray-400 shrink-0 mt-0.5 line-through" />
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Old Time</span>
+              <span className="font-medium leading-snug line-through">{oldTime}</span>
+            </div>
+          </div>
+        )}
+        
+        {when && (
+          <div className="flex items-start gap-3">
+            <Calendar size={16} className={isSuccess ? "text-[#1da851] shrink-0 mt-0.5" : "text-[#cca66a] shrink-0 mt-0.5"} />
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">{oldTime ? "New Time" : "Time"}</span>
+              <span className="font-bold leading-snug text-[#043b2d]">{when}</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -126,6 +181,7 @@ interface Message {
   id: string;
   role: Role;
   content: ReactNode;
+  customContent?: ReactNode;
   actionButtons?: ReactNode;
 }
 
@@ -197,24 +253,113 @@ function App() {
 
            // Extract numbered options from the text
            let displayText = text;
-           const options = [...text.matchAll(/(?:^|\n)\s*(?:\d+\.|-)\s+([^\n]+)/g)].map(m => m[1].trim()).filter(Boolean);
+           // ONLY match numbered lists (e.g. 1. Option), do NOT match bullet points (-)
+           const allOptions = [...text.matchAll(/(?:^|\n)\s*(?:\d+\.)\s+([^\n]+)/g)];
+           const options: string[] = [];
+           
+           for (const match of allOptions) {
+             const val = match[1].trim();
+             // Skip details like "**Date:** value" so they don't become pills
+             if (!/^\*\*.*?\*\*:/.test(val) && !val.includes('**Date:**') && !val.includes('**Time:**')) {
+               options.push(val);
+               // Remove only the matched pill line
+               displayText = displayText.replace(match[0], '');
+             }
+           }
+           
+           // Check for Yes/No confirmation prompts
+           const yesNoRegex = /(?:please\s+)?reply\s+\*?yes\*?\s+.*?or\s+\*?no\*?\s+.*?(?:\.|$)/i;
+           const yesNoMatch = text.match(yesNoRegex);
+           if (yesNoMatch) {
+             options.push('Yes', 'No');
+             displayText = displayText.replace(yesNoRegex, '');
+           }
+
+           // Check for Verify prompt
+           const verifyRegex = /(?:please\s+)?say\s+["'*]?verify["'*]?.*?(?:\.|$)/i;
+           const verifyMatch = text.match(verifyRegex);
+           if (verifyMatch) {
+             options.push('Verify');
+             displayText = displayText.replace(verifyRegex, '');
+           }
+
+           // Check for identity verified to show quick actions
+           if (/identity has been verified/i.test(text)) {
+             options.push('Cancel Appointment');
+           }
+
            if (options.length > 0) {
              setCurrentPills(options);
-             
-             // Remove the list items from the chat bubble
-             displayText = displayText.replace(/(?:^|\n)\s*(?:\d+\.|-)\s+([^\n]+)/g, '');
              
              // Remove redundant "reply with..." instructions
              displayText = displayText.replace(/Reply with the number.*/gi, '');
              displayText = displayText.replace(/Please reply with a number.*/gi, '');
+           }
              
-             // Clean up excess newlines
-             displayText = displayText.replace(/\n{3,}/g, '\n\n').trim();
+           // Clean up excess newlines
+           displayText = displayText.replace(/\n{3,}/g, '\n\n').trim();
+
+           // Check for booking details (either prompt, confirmation, or listing)
+           const isConfirmation = text.match(/(?:Your )?appointment is confirmed/i);
+           const isPrompt = text.match(/Please confirm (?:your booking|rescheduling)/i);
+           const isList = text.match(/upcoming appointment|here are the details/i);
+           let customContent: ReactNode = undefined;
+           
+           if (isConfirmation || isPrompt || isList) {
+             const referenceMatch = text.match(/Reference ID:\s*([^\n]+)/i);
+             const doctorMatch = text.match(/Doctor:\s*([^\n]+)/i) || text.match(/Dr\.\s+([A-Za-z\s]+)/i);
+             const whenMatch = text.match(/When:\s*([^\n]+)/i) || text.match(/\*\*Date:\*\*\s*([^\n]+)/i);
+             const timeMatch = text.match(/\*\*Time:\*\*\s*([^\n]+)/i);
+             const packageMatch = text.match(/Package:\s*([^\n]+)/i);
+             const oldTimeMatch = text.match(/Old time:\s*([^\n]+)/i);
+             const newTimeMatch = text.match(/New time:\s*([^\n]+)/i);
+             const appointmentMatch = text.match(/Appointment:\s*([^\n]+)/i) || text.match(/for a (consultation|check-up)/i);
+             
+             if (doctorMatch || whenMatch || oldTimeMatch || newTimeMatch) {
+               let title = isConfirmation ? "Appointment Confirmed!" : "Please confirm details:";
+               if (isList && !isConfirmation && !isPrompt) {
+                 title = "Upcoming Appointment";
+               }
+               
+               const actualDoctor = doctorMatch ? (doctorMatch[0].startsWith('Dr.') ? doctorMatch[0].trim() : doctorMatch[1].trim()) : '';
+               let actualWhen = whenMatch ? whenMatch[1].trim() : (newTimeMatch ? newTimeMatch[1].trim() : '');
+               if (timeMatch && actualWhen) {
+                 actualWhen = `${actualWhen} at ${timeMatch[1].trim()}`;
+               }
+               const actualPackage = packageMatch ? packageMatch[1].trim() : (appointmentMatch ? appointmentMatch[1].trim() : '');
+               const actualOldTime = oldTimeMatch ? oldTimeMatch[1].trim() : '';
+               
+               customContent = <BookingDetailsCard 
+                 title={title}
+                 isSuccess={!!isConfirmation || !!isList}
+                 referenceId={referenceMatch ? referenceMatch[1].trim() : undefined} 
+                 doctor={actualDoctor} 
+                 when={actualWhen} 
+                 packageName={actualPackage} 
+                 oldTime={actualOldTime}
+               />;
+               
+               // Strip from display text
+               displayText = displayText.replace(/(?:Your )?appointment is confirmed!/i, '');
+               displayText = displayText.replace(/Please confirm (?:your booking|rescheduling):/i, '');
+               displayText = displayText.replace(/Reference ID:.*/i, '');
+               displayText = displayText.replace(/Doctor:.*/i, '');
+               displayText = displayText.replace(/When:.*/i, '');
+               displayText = displayText.replace(/Package:.*/i, '');
+               displayText = displayText.replace(/Appointment:.*/i, '');
+               displayText = displayText.replace(/Old time:.*/i, '');
+               displayText = displayText.replace(/New time:.*/i, '');
+               displayText = displayText.replace(/(?:- )?\*\*Date:\*\*.*\n?/i, '');
+               displayText = displayText.replace(/(?:- )?\*\*Time:\*\*.*\n?/i, '');
+               
+               // Re-cleanup empty newlines left behind
+               displayText = displayText.replace(/\n{2,}/g, '\n').trim();
+             }
            }
 
-           if (displayText || actionButtons) {
-             const formattedText = <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div>;
-             addMessage('bot', formattedText, actionButtons);
+           if (displayText || actionButtons || customContent) {
+             const formattedText = displayText ? <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div> : null;
+             addMessage('bot', formattedText, actionButtons, customContent);
            }
            setIsLoading(false);
         } else if (d.type === 'form_request') {
@@ -308,8 +453,8 @@ function App() {
     setIsLangMenuOpen(false);
   };
 
-  const addMessage = (role: Role, content: ReactNode, actionButtons?: ReactNode) => {
-    setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content, actionButtons }]);
+  const addMessage = (role: Role, content: ReactNode, actionButtons?: ReactNode, customContent?: ReactNode) => {
+    setMessages((prev) => [...prev, { id: `msg-${Date.now()}-${Math.random()}`, role, content, customContent, actionButtons }]);
   };
 
 
@@ -490,9 +635,16 @@ function App() {
                       </div>
                     )}
                     <div className={`message-content max-w-[92%] md:max-w-[85%] ${msg.role === 'user' ? 'items-end' : ''}`}>
-                      <div className={`message-bubble shadow-sm border border-black/5 text-[#2d3748] ${msg.role === 'user' ? '!bg-[#124d3c] !text-white !rounded-tl-[18px] !rounded-tr-[18px] !rounded-bl-[18px] !rounded-br-[4px]' : '!bg-white'}`}>
-                        {msg.content}
-                      </div>
+                      {msg.content && (
+                        <div className={`message-bubble shadow-sm border border-black/5 text-[#2d3748] ${msg.role === 'user' ? '!bg-[#124d3c] !text-white !rounded-tl-[18px] !rounded-tr-[18px] !rounded-bl-[18px] !rounded-br-[4px]' : '!bg-white'}`}>
+                          {msg.content}
+                        </div>
+                      )}
+                      {msg.customContent && (
+                        <div className="mt-1">
+                          {msg.customContent}
+                        </div>
+                      )}
                       {msg.actionButtons && (
                         <div className="action-buttons mt-2">
                           {msg.actionButtons}
@@ -538,16 +690,18 @@ function App() {
                   </div>
                 </div>
 
-                {/* Desktop Grid Container */}
-                <div className="hidden md:grid md:grid-cols-3 gap-3 w-full max-w-full">
+                {/* Desktop Vertical Box Container */}
+                <div className="hidden md:flex flex-col gap-2 w-full max-w-[80%] mx-auto">
                   {currentPills.map((pillText, index) => (
                     <button
                       key={index}
-                      className="pill shadow-sm bg-white hover:bg-gray-50 text-[#333] text-[13.5px] font-medium px-4 py-2.5 rounded-[16px] transition-colors text-center truncate"
+                      className="group flex items-center p-3.5 bg-white border border-[#e2e8e4] rounded-[12px] shadow-sm hover:shadow-md hover:border-[#4a866d] hover:bg-[#f8fbf9] transition-all text-left"
                       onClick={() => handleSend(pillText, true)}
-                      title={pillText}
                     >
-                      <span className="truncate block w-full">{pillText}</span>
+                      <div className="w-8 h-8 rounded-full bg-[#f0f4f2] text-[#4a866d] flex items-center justify-center shrink-0 mr-3 group-hover:bg-[#4a866d] group-hover:text-white transition-colors">
+                        {getPillIcon(pillText)}
+                      </div>
+                      <span className="text-[#2d3748] text-[14.5px] font-medium leading-snug">{pillText}</span>
                     </button>
                   ))}
                 </div>
