@@ -9,6 +9,7 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     dob: '',
     gender: '',
     state: '',
@@ -18,7 +19,7 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const str = `Name: ${formData.name}, Email: ${formData.email}, DOB: ${formData.dob}, Gender: ${formData.gender}, State: ${formData.state}, City: ${formData.city}, Concern: ${formData.concern}`;
+    const str = `Name: ${formData.name}, Email: ${formData.email}, Phone: ${formData.phone}, DOB: ${formData.dob}, Gender: ${formData.gender}, State: ${formData.state}, City: ${formData.city}, Concern: ${formData.concern}`;
     setSubmitted(true);
     onSubmit(str);
   };
@@ -30,6 +31,7 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
       <h3 className="font-semibold text-[#043b2d] text-[15px] mb-1 sm:col-span-3">Patient Details</h3>
       <input required type="text" placeholder="Full Name" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
       <input required type="email" placeholder="Email Address" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+      <input required type="tel" placeholder="Phone Number (e.g. +1234567890)" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
       <input required type="date" placeholder="Date of Birth" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
       
       <select required className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
@@ -44,6 +46,81 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
       <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="sm:col-span-3 border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
       <button type="submit" className="sm:col-span-3 bg-[#cca66a] text-white py-2.5 rounded-[8px] text-[14px] font-bold hover:bg-[#b5925a] transition-colors mt-1">Submit Details</button>
     </form>
+  );
+}
+
+function CalendarSlotPicker({ options, onSelect }: { options: string[], onSelect: (time: string) => void }) {
+  const grouped: Record<string, { displayTime: string, fullString: string }[]> = {};
+  options.forEach(opt => {
+    const parts = opt.split(', ');
+    if (parts.length >= 3) {
+      const dateStr = `${parts[0]}, ${parts[1]}`;
+      const timeStr = parts.slice(2).join(', ');
+      if (!grouped[dateStr]) grouped[dateStr] = [];
+      grouped[dateStr].push({ displayTime: timeStr, fullString: opt });
+    } else {
+      if (!grouped['Other Options']) grouped['Other Options'] = [];
+      grouped['Other Options'].push({ displayTime: opt, fullString: opt });
+    }
+  });
+
+  const dates = Object.keys(grouped);
+  const [selectedDate, setSelectedDate] = useState<string>(dates[0] || '');
+  
+  useEffect(() => {
+    if (dates.length > 0 && !dates.includes(selectedDate)) {
+      setSelectedDate(dates[0]);
+    }
+  }, [dates, selectedDate]);
+
+  if (dates.length === 0) return null;
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-[12px] p-4 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] w-full sm:w-[500px] max-w-[100%]">
+      <h3 className="font-semibold text-[#043b2d] text-[15px] mb-3 flex items-center gap-2">
+        <Calendar size={18} className="text-[#cca66a]" />
+        Select a Date
+      </h3>
+      
+      <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        {dates.map(date => (
+          <button 
+            key={date}
+            onClick={() => setSelectedDate(date)}
+            className={`shrink-0 px-4 py-2.5 rounded-[10px] border flex flex-col items-center justify-center min-w-[110px] transition-all
+              ${selectedDate === date 
+                ? 'bg-[#124d3c] border-[#124d3c] text-white shadow-md' 
+                : 'bg-white border-gray-200 text-gray-700 hover:border-[#cca66a]'
+              }`}
+          >
+            <span className={`text-[11px] uppercase tracking-wider font-bold mb-0.5 ${selectedDate === date ? 'text-[#cca66a]' : 'text-gray-400'}`}>
+              {date.includes(',') ? date.split(',')[0] : 'Option'}
+            </span>
+            <span className="font-semibold text-[14px]">
+              {date.includes(',') ? date.split(',')[1] : date}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="h-[1px] w-full bg-gray-100 my-3"></div>
+
+      <h3 className="font-semibold text-[#043b2d] text-[14px] mb-3 flex items-center gap-2">
+        <Activity size={16} className="text-[#cca66a]" />
+        Available Times
+      </h3>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {grouped[selectedDate]?.map((timeObj, idx) => (
+          <button
+            key={idx}
+            onClick={() => onSelect(timeObj.fullString)}
+            className="px-3 py-2 text-[13.5px] font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-[8px] hover:bg-[#cca66a] hover:text-white hover:border-[#cca66a] transition-colors"
+          >
+            {timeObj.displayTime}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -243,6 +320,7 @@ function App() {
         } else if (d.type === 'assistant_message') {
            const text = d.text || '';
            const isRegistrationPrompt = text.toLowerCase().includes('what is your full name');
+           const isSlotPrompt = text.toLowerCase().includes('available slots');
            let actionButtons: ReactNode = undefined;
            
            if (isRegistrationPrompt) {
@@ -289,7 +367,13 @@ function App() {
            }
 
            if (options.length > 0) {
-             setCurrentPills(options);
+             if (isSlotPrompt) {
+               actionButtons = <CalendarSlotPicker options={options} onSelect={(time) => {
+                 handleSend(time, false);
+               }} />;
+             } else {
+               setCurrentPills(options);
+             }
              
              // Remove redundant "reply with..." instructions
              displayText = displayText.replace(/Reply with the number.*/gi, '');
