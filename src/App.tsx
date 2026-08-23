@@ -451,6 +451,7 @@ function App() {
            addMessage('bot', prompt);
            setIsLoading(false);
         } else if (d.type === 'error') {
+           console.error('Chat error from server:', d.content);
            addMessage('bot', 'Something went wrong — please try again.');
            setIsLoading(false);
         }
