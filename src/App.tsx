@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { MessageCircle, Mic, Send, Globe, ChevronDown, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, Activity, AlertCircle, Wind } from 'lucide-react';
+import { MessageCircle, Mic, Send, Globe, ChevronDown, ChevronLeft, ChevronRight, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, Activity, AlertCircle, Wind } from 'lucide-react';
 
 import './App.css';
 
@@ -49,77 +49,168 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
   );
 }
 
+function parseOptionDate(opt: string) {
+  const parts = opt.split(', ');
+  if (parts.length < 3) return null;
+  const datePart = parts[1]; // "25 Aug"
+  const [day, monthStr] = datePart.split(' ');
+  // Handle both "Sep" and "Sept"
+  const cleanMonthStr = monthStr === 'Sept' ? 'Sep' : monthStr;
+  const monthIdx = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(cleanMonthStr);
+  
+  if (monthIdx === -1) return null;
+
+  const now = new Date();
+  let year = now.getFullYear();
+  if (monthIdx < now.getMonth() - 1) { 
+    year++;
+  }
+  return new Date(year, monthIdx, parseInt(day));
+}
+
 function CalendarSlotPicker({ options, onSelect }: { options: string[], onSelect: (time: string) => void }) {
-  const grouped: Record<string, { displayTime: string, fullString: string }[]> = {};
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+  const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
+
+  const parsedSlots: { dateObj: Date, dateKey: string, timeStr: string, fullString: string }[] = [];
+  
   options.forEach(opt => {
-    const parts = opt.split(', ');
-    if (parts.length >= 3) {
-      const dateStr = `${parts[0]}, ${parts[1]}`;
-      const timeStr = parts.slice(2).join(', ');
-      if (!grouped[dateStr]) grouped[dateStr] = [];
-      grouped[dateStr].push({ displayTime: timeStr, fullString: opt });
-    } else {
-      if (!grouped['Other Options']) grouped['Other Options'] = [];
-      grouped['Other Options'].push({ displayTime: opt, fullString: opt });
+    const d = parseOptionDate(opt);
+    if (d) {
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const timeStr = opt.split(', ').slice(2).join(', ');
+      parsedSlots.push({ dateObj: d, dateKey, timeStr, fullString: opt });
     }
   });
 
-  const dates = Object.keys(grouped);
-  const [selectedDate, setSelectedDate] = useState<string>(dates[0] || '');
-  
-  useEffect(() => {
-    if (dates.length > 0 && !dates.includes(selectedDate)) {
-      setSelectedDate(dates[0]);
-    }
-  }, [dates, selectedDate]);
+  const slotsByDate: Record<string, typeof parsedSlots> = {};
+  parsedSlots.forEach(s => {
+    if (!slotsByDate[s.dateKey]) slotsByDate[s.dateKey] = [];
+    slotsByDate[s.dateKey].push(s);
+  });
 
-  if (dates.length === 0) return null;
+  useEffect(() => {
+    if (!selectedDateStr && parsedSlots.length > 0) {
+      const sorted = [...parsedSlots].sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime());
+      setSelectedDateStr(sorted[0].dateKey);
+      setCurrentMonth(new Date(sorted[0].dateObj.getFullYear(), sorted[0].dateObj.getMonth(), 1));
+    }
+  }, [parsedSlots, selectedDateStr]);
+
+  const year = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const startDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const days = [];
+  for (let i = 0; i < startDay; i++) {
+    days.push(null);
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(i);
+  }
+
+  const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  const selectedDateSlots = selectedDateStr ? (slotsByDate[selectedDateStr] || []) : [];
+  
+  let selectedDateDisplay = '';
+  if (selectedDateStr) {
+    const [y, m, d] = selectedDateStr.split('-');
+    const dObj = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
+    const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    selectedDateDisplay = `${weekdays[dObj.getDay()]}, ${dObj.getDate()} ${monthNames[dObj.getMonth()]}`;
+  }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-[12px] p-4 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] w-full sm:w-[500px] max-w-[100%]">
-      <h3 className="font-semibold text-[#043b2d] text-[15px] mb-3 flex items-center gap-2">
-        <Calendar size={18} className="text-[#cca66a]" />
-        Select a Date
-      </h3>
+    <div className="bg-white border border-gray-200 rounded-[12px] p-0 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] w-full sm:w-[700px] max-w-[100%] flex flex-col sm:flex-row overflow-hidden">
       
-      <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        {dates.map(date => (
-          <button 
-            key={date}
-            onClick={() => setSelectedDate(date)}
-            className={`shrink-0 px-4 py-2.5 rounded-[10px] border flex flex-col items-center justify-center min-w-[110px] transition-all
-              ${selectedDate === date 
-                ? 'bg-[#124d3c] border-[#124d3c] text-white shadow-md' 
-                : 'bg-white border-gray-200 text-gray-700 hover:border-[#cca66a]'
-              }`}
-          >
-            <span className={`text-[11px] uppercase tracking-wider font-bold mb-0.5 ${selectedDate === date ? 'text-[#cca66a]' : 'text-gray-400'}`}>
-              {date.includes(',') ? date.split(',')[0] : 'Option'}
-            </span>
-            <span className="font-semibold text-[14px]">
-              {date.includes(',') ? date.split(',')[1] : date}
-            </span>
-          </button>
-        ))}
+      {/* Left Panel: Calendar */}
+      <div className="flex-1 p-5 border-b sm:border-b-0 sm:border-r border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-[17px] font-bold text-[#043b2d]">
+            {monthNames[month]} <span className="text-gray-400 font-normal">{year}</span>
+          </h2>
+          <div className="flex gap-2">
+            <button onClick={prevMonth} className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-900">
+              <ChevronLeft size={18} />
+            </button>
+            <button onClick={nextMonth} className="p-1.5 hover:bg-gray-100 rounded-md transition-colors text-gray-500 hover:text-gray-900">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 text-center mb-2">
+          {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(d => (
+            <div key={d} className="text-[11px] font-bold text-gray-400 tracking-wider py-1">{d}</div>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {days.map((day, idx) => {
+            if (!day) return <div key={`empty-${idx}`} className="p-2"></div>;
+            
+            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const hasSlots = !!slotsByDate[dateKey];
+            const isSelected = selectedDateStr === dateKey;
+            
+            return (
+              <button
+                key={idx}
+                disabled={!hasSlots}
+                onClick={() => setSelectedDateStr(dateKey)}
+                className={`w-full aspect-square flex items-center justify-center rounded-[6px] text-[14px] font-medium transition-colors
+                  ${isSelected ? 'bg-[#043b2d] text-white shadow-sm' : ''}
+                  ${!isSelected && hasSlots ? 'bg-[#f4f7f5] text-gray-800 hover:bg-[#e2e8e4]' : ''}
+                  ${!hasSlots ? 'text-gray-300 cursor-default' : ''}
+                `}
+              >
+                {day}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="h-[1px] w-full bg-gray-100 my-3"></div>
-
-      <h3 className="font-semibold text-[#043b2d] text-[14px] mb-3 flex items-center gap-2">
-        <Activity size={16} className="text-[#cca66a]" />
-        Available Times
-      </h3>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {grouped[selectedDate]?.map((timeObj, idx) => (
-          <button
-            key={idx}
-            onClick={() => onSelect(timeObj.fullString)}
-            className="px-3 py-2 text-[13.5px] font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-[8px] hover:bg-[#cca66a] hover:text-white hover:border-[#cca66a] transition-colors"
-          >
-            {timeObj.displayTime}
-          </button>
-        ))}
+      {/* Right Panel: Time Slots */}
+      <div className="w-full sm:w-[280px] p-5 bg-[#fafbfb]">
+        {selectedDateStr ? (
+          <>
+            <h3 className="font-semibold text-gray-700 text-[14px] mb-4 pb-3 border-b border-gray-200">
+              {selectedDateDisplay}
+            </h3>
+            
+            <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar" style={{ scrollbarWidth: 'thin' }}>
+              {selectedDateSlots.length > 0 ? (
+                selectedDateSlots.map((slot, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => onSelect(slot.fullString)}
+                    className="w-full py-2.5 px-4 text-[13.5px] font-bold text-[#043b2d] bg-white border border-gray-200 rounded-[6px] hover:border-[#cca66a] hover:text-[#cca66a] hover:shadow-[0_2px_8px_rgba(204,166,106,0.15)] transition-all text-center"
+                  >
+                    {slot.timeStr}
+                  </button>
+                ))
+              ) : (
+                <div className="text-[13px] text-gray-400 text-center py-8">
+                  No availability on this date
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+           <div className="text-[13px] text-gray-400 text-center py-10 h-full flex items-center justify-center">
+             Select a date to view times
+           </div>
+        )}
       </div>
+
     </div>
   );
 }
@@ -135,7 +226,7 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
       <div className="flex flex-col gap-3.5 text-[13.5px] text-gray-700 bg-gray-50/50 p-3 rounded-[12px] border border-gray-100">
         {referenceId && (
           <div className="flex flex-col mb-1">
-            <span className="text-[11px] font-bold text-[#cca66a] uppercase tracking-wider mb-0.5">Reference ID</span>
+            <span className="text-[11px] font-bold text-[#cca66a] uppercase tracking-wider mb-0.5">Patient ID</span>
             <span className="font-mono text-xs text-gray-600 bg-white px-2 py-1 rounded border border-gray-200 w-fit">{referenceId}</span>
           </div>
         )}
@@ -319,7 +410,7 @@ function App() {
            setIsLoading(false);
         } else if (d.type === 'assistant_message') {
            const text = d.text || '';
-           const isRegistrationPrompt = text.toLowerCase().includes('what is your full name');
+           const isRegistrationPrompt = text.toLowerCase().includes('what is your full name') || text.toLowerCase().includes('what is their full name');
            const isSlotPrompt = text.toLowerCase().includes('available slots');
            let actionButtons: ReactNode = undefined;
            
