@@ -68,17 +68,34 @@ function parseOptionDate(opt: string) {
   return new Date(year, monthIdx, parseInt(day));
 }
 
+function parseOptionTime(d: Date, timeStr: string): Date {
+  const match = timeStr.match(/(\d+):(\d+)\s*(am|pm)/i);
+  if (!match) return d;
+  const [_, h, m, ampm] = match;
+  let hours = parseInt(h, 10);
+  if (ampm.toLowerCase() === 'pm' && hours < 12) hours += 12;
+  if (ampm.toLowerCase() === 'am' && hours === 12) hours = 0;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hours, parseInt(m, 10), 0);
+}
+
 function CalendarSlotPicker({ options, onSelect }: { options: string[], onSelect: (time: string) => void }) {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 
   const parsedSlots: { dateObj: Date, dateKey: string, timeStr: string, fullString: string }[] = [];
   
+  const now = new Date();
+
   options.forEach(opt => {
     const d = parseOptionDate(opt);
     if (d) {
-      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       const timeStr = opt.split(', ').slice(2).join(', ');
+      const fullDateTime = parseOptionTime(d, timeStr);
+      
+      // Filter out slots that have already passed
+      if (fullDateTime < now) return;
+
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       parsedSlots.push({ dateObj: d, dateKey, timeStr, fullString: opt });
     }
   });
@@ -401,6 +418,7 @@ function App() {
     const wsBase = baseUrl.replace(/^http/, 'ws');
     
     const url = `${wsBase}/ws/chatbot/${botId}?threadId=${encodeURIComponent(threadIdRef.current)}`;
+    console.log(url)
     const ws = new WebSocket(url);
     
     ws.onmessage = (e) => {
@@ -477,10 +495,35 @@ function App() {
            // Check for booking details (either prompt, confirmation, or listing)
            const isConfirmation = text.match(/(?:Your )?appointment is confirmed/i);
            const isPrompt = text.match(/Please confirm (?:your booking|rescheduling)/i);
-           const isList = text.match(/upcoming appointment|here are the details/i);
+           const isList = text.match(/upcoming appointment|here are the details|recent appointments/i);
            let customContent: ReactNode = undefined;
            
-           if (isConfirmation || isPrompt || isList) {
+           if (isList && !isConfirmation && !isPrompt) {
+             const listMatches = [...text.matchAll(/(?:✅|🔄|📅)\s*\*([^*]+)\*(?:\s*with (Dr\.\s+[A-Za-z\s]+))?(?:\s*\*\(for ([^)]+)\)\*)?\n\s*📋 Treatment:\s*([^\n]+)/gi)];
+             if (listMatches.length > 0) {
+               customContent = (
+                 <div className="flex flex-col gap-2 w-full mt-2">
+                   {listMatches.map((m, i) => (
+                     <BookingDetailsCard 
+                       key={i}
+                       title="Upcoming Appointment"
+                       isSuccess={true}
+                       when={m[1].trim()}
+                       doctor={m[2] ? m[2].trim() : ''}
+                       packageName={m[4] ? m[4].trim() : ''}
+                       // Reuse the referenceId field to show who it is for if it's a family booking
+                       referenceId={m[3] ? `For: ${m[3].trim()}` : undefined} 
+                     />
+                   ))}
+                 </div>
+               );
+               // Strip the matched list items
+               displayText = displayText.replace(/(?:✅|🔄|📅)\s*\*([^*]+)\*(?:\s*with Dr\.\s+[A-Za-z\s]+)?(?:\s*\*\(for [^)]+\)\*)?\n\s*📋 Treatment:\s*[^\n]+/gi, '');
+               // Clean up prefix
+               displayText = displayText.replace(/Here are your (upcoming|recent) appointments:/i, '');
+               displayText = displayText.replace(/\n{2,}/g, '\n').trim();
+             }
+           } else if (isConfirmation || isPrompt) {
              const referenceMatch = text.match(/Reference ID:\s*([^\n]+)/i);
              const doctorMatch = text.match(/Doctor:\s*([^\n]+)/i) || text.match(/Dr\.\s+([A-Za-z\s]+)/i);
              const whenMatch = text.match(/When:\s*([^\n]+)/i) || text.match(/\*\*Date:\*\*\s*([^\n]+)/i);
@@ -491,10 +534,7 @@ function App() {
              const appointmentMatch = text.match(/Appointment:\s*([^\n]+)/i) || text.match(/for a (consultation|check-up)/i);
              
              if (doctorMatch || whenMatch || oldTimeMatch || newTimeMatch) {
-               let title = isConfirmation ? "Appointment Confirmed!" : "Please confirm details:";
-               if (isList && !isConfirmation && !isPrompt) {
-                 title = "Upcoming Appointment";
-               }
+               const title = isConfirmation ? "Appointment Confirmed!" : "Please confirm details:";
                
                const actualDoctor = doctorMatch ? (doctorMatch[0].startsWith('Dr.') ? doctorMatch[0].trim() : doctorMatch[1].trim()) : '';
                let actualWhen = whenMatch ? whenMatch[1].trim() : (newTimeMatch ? newTimeMatch[1].trim() : '');
@@ -506,7 +546,7 @@ function App() {
                
                customContent = <BookingDetailsCard 
                  title={title}
-                 isSuccess={!!isConfirmation || !!isList}
+                 isSuccess={!!isConfirmation}
                  referenceId={referenceMatch ? referenceMatch[1].trim() : undefined} 
                  doctor={actualDoctor} 
                  when={actualWhen} 
