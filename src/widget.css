@@ -68,7 +68,7 @@ html, body, #root {
   right: 32px;
   width: 60px;
   height: 60px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   background-color: var(--color-primary);
   color: var(--color-text-white);
   display: flex;
@@ -225,7 +225,7 @@ html, body, #root {
 .header-action-btn {
   width: 20px !important;
   height: 20px !important;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   background-color: rgba(255, 255, 255, 0.15);
   color: var(--color-text-white);
   display: flex;
@@ -256,7 +256,7 @@ html, body, #root {
   gap: 2px !important;
   font-size: 10px !important;
   font-weight: 600;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
 }
 
 .lang-code {
@@ -350,7 +350,7 @@ html, body, #root {
 .message-avatar {
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   background: radial-gradient(circle at 30% 30%, #e6bb80 0%, #95b69c 45%, #56987f 100%);
   color: #ffffff;
   display: flex;
@@ -389,7 +389,7 @@ html, body, #root {
   background-color: var(--color-primary);
   color: var(--color-text-white);
   padding: 6px 12px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   font-size: 9px;
   font-weight: 600;
   box-shadow: var(--shadow-sm);
@@ -407,7 +407,7 @@ html, body, #root {
   background-color: #eaf4ef;
   color: var(--color-primary);
   padding: 10px 16px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   font-size: 13px;
   font-weight: 600;
   border: 1px solid var(--color-primary);
@@ -423,7 +423,7 @@ html, body, #root {
   background-color: #25d366;
   color: #ffffff;
   padding: 8px 14px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   font-size: 9px;
   font-weight: 600;
   box-shadow: var(--shadow-sm);
@@ -784,7 +784,7 @@ input:checked + .voice-slider:before {
 .input-container {
   flex: 1;
   background-color: var(--color-bg-chat);
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   padding: 8px 16px;
   display: flex;
   align-items: center;
@@ -821,7 +821,7 @@ input:checked + .voice-slider:before {
 .btn-icon {
   width: 36px;
   height: 36px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -868,7 +868,7 @@ input:checked + .voice-slider:before {
   background-color: rgba(96, 196, 154, 0.1);
   color: var(--color-primary);
   padding: 12px 16px;
-  border-radius: var(--radius-full);
+  border-radius: 9999px;
   font-size: 13px;
   font-weight: 500;
   margin: 0 auto;
