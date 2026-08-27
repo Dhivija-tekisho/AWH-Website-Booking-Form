@@ -25,7 +25,7 @@ const init = (options: Partial<WidgetOptions> = {}) => {
   let apiUrl = options.apiUrl;
 
   if (!botId) {
-    const scriptTag = document.currentScript;
+    const scriptTag = document.currentScript || document.querySelector('script[src*="widget.js"]');
     if (scriptTag) {
       botId = scriptTag.getAttribute('data-bot-id') || undefined;
       apiUrl = scriptTag.getAttribute('data-api-url') || undefined;
