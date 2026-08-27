@@ -27,24 +27,24 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
   if (submitted) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-[12px] p-4 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-[700px] max-w-[100%]">
-      <h3 className="font-semibold text-[#043b2d] text-[15px] mb-1 sm:col-span-3">Patient Details</h3>
-      <input required type="text" placeholder="Full Name" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-      <input required type="email" placeholder="Email Address" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-      <input required type="tel" placeholder="Phone Number (e.g. +1234567890)" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-      <input required type="date" placeholder="Date of Birth" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-[12px] p-3 mt-2 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+      <h3 className="font-semibold text-[#043b2d] text-[14px] mb-1 sm:col-span-2">Patient Details</h3>
+      <input required type="text" placeholder="Full Name" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+      <input required type="email" placeholder="Email Address" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+      <input required type="tel" placeholder="Phone Number (e.g. +1234567890)" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+      <input required type="date" placeholder="Date of Birth" className="border border-gray-200 rounded-[6px] p-2 text-[12px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
       
-      <select required className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
+      <select required className="border border-gray-200 rounded-[6px] p-2 text-[12px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
         <option value="" disabled>Gender</option>
         <option value="male">Male</option>
         <option value="female">Female</option>
         <option value="other">Other</option>
       </select>
-      <input required type="text" placeholder="State (e.g. Telangana)" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
-      <input required type="text" placeholder="City" className="border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a]" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+      <input required type="text" placeholder="State (e.g. Telangana)" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+      <input required type="text" placeholder="City" className="sm:col-span-2 border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
       
-      <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="sm:col-span-3 border border-gray-200 rounded-[8px] p-2.5 text-[14px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
-      <button type="submit" className="sm:col-span-3 bg-[#cca66a] text-white py-2.5 rounded-[8px] text-[14px] font-bold hover:bg-[#b5925a] transition-colors mt-1">Submit Details</button>
+      <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="sm:col-span-2 border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
+      <button type="submit" className="sm:col-span-2 bg-[#cca66a] text-white py-2 rounded-[6px] text-[13px] font-bold hover:bg-[#b5925a] transition-colors mt-1">Submit Details</button>
     </form>
   );
 }
