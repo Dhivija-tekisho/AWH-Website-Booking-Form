@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { MessageCircle, Mic, Send, Globe, ChevronDown, ChevronLeft, ChevronRight, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, Activity, AlertCircle, Wind } from 'lucide-react';
+import { MessageCircle, Send, Globe, ChevronDown, ChevronLeft, ChevronRight, Upload, CheckCircle2, Calendar, User, Phone, MapPin, Stethoscope, Activity, AlertCircle, Wind, X } from 'lucide-react';
 
 import './App.css';
 
@@ -360,8 +360,8 @@ const translations: Record<Language, Translations> = {
     online: 'Online',
     subtitle: 'Care Companion · always here for you',
     welcomeMessage: (
-      <div>
-        <p>Namaste 🙏 I'm <strong>Asha</strong>, your care companion at KVNN's Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
+      <div className="text-[10px]" style={{ fontSize: '10px', lineHeight: '1.4' }}>
+        <p style={{ fontSize: '10px' }}>Namaste 🙏 I'm <strong>Asha</strong>, your care companion at KVNN's Advanced Wound Healing Clinics. You can ask me about a wound, our treatments, booking a visit, or anything at all. How can I help you today?</p>
       </div>
     ),
     bookAppointment: 'Book appointment',
@@ -432,8 +432,8 @@ interface BookingData {
 }
 
 function App() {
-  const [isOpen, setIsOpen] = useState(true);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  // const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [language, setLanguage] = useState<Language>('en');
   const [, setIsLangMenuOpen] = useState(false);
@@ -729,8 +729,8 @@ function App() {
       actionButtons: (
         <div className="flex gap-2 flex-wrap">
           <button className="btn-primary !bg-[#113227] hover:!bg-[#043b2d]" onClick={() => handleSend(t.bookAppointment, true)}>{t.bookAppointment}</button>
-          <button className="btn-whatsapp !bg-[#1da851] !hover:bg-[#158940] flex items-center justify-center gap-1.5" onClick={() => window.open('https://wa.me/1234567890', '_blank')}>
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+          <button className="btn-whatsapp !bg-[#1da851] !hover:bg-[#158940] flex items-center justify-center gap-1.2" onClick={() => window.open('https://wa.me/1234567890', '_blank')}>
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
             Chat on WhatsApp
           </button>
         </div>
@@ -750,8 +750,7 @@ function App() {
     }
   }, [messages.length]);
 
-  const toggleWidget = () => setIsOpen(!isOpen);
-  const toggleVoice = () => setIsVoiceEnabled(!isVoiceEnabled);
+  // const toggleVoice = () => setIsVoiceEnabled(!isVoiceEnabled);
   const selectLanguage = (lang: Language) => {
     setLanguage(lang);
     setIsLangMenuOpen(false);
@@ -815,7 +814,7 @@ function App() {
 
 
   return (
-    <div className="h-[100dvh] md:min-h-screen flex flex-col bg-[#fcfaf5] font-sans selection:bg-[#cca66a] selection:text-white">
+    <div className="h-[100dvh] overflow-y-auto flex flex-col bg-[#fcfaf5] font-sans selection:bg-[#cca66a] selection:text-white">
       {/* Top Banner */}
       <div className="hidden md:flex bg-[#043b2d] text-white text-xs py-2 px-[5%] justify-between items-center z-20 relative">
         <div className="flex items-center gap-6">
@@ -879,58 +878,59 @@ function App() {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 bg-[#fcfaf5] flex flex-col relative z-0 overflow-hidden min-h-0">
+      <main className="flex-1 bg-[#fcfaf5] flex flex-col relative z-0 min-h-0">
         {/* Hero Section */}
-        <section className="hidden md:block text-center pt-8 pb-4 px-4 flex-shrink-0">
+        <section className="hidden md:block text-center pt-8 pb-4 px-4 flex-shrink-0 hide-on-short">
 
           <h1 className="text-3xl md:text-5xl font-serif text-[#113227] mb-2 md:mb-4 font-normal tracking-tight">Meet Asha</h1>
           <p className="text-[15px] md:text-[17px] text-gray-600 max-w-[550px] mx-auto leading-relaxed px-4 md:px-0">
             Ask anything — by typing or by voice. Asha is here to guide, reassure, and help you take the next step.
           </p>
         </section>
+      </main>
 
-        {/* Chat Inline Wrapper */}
-        <div className={`flex-1 min-h-0 w-full flex justify-center items-stretch md:items-start transition-all duration-700 ease-in-out px-0 md:px-4 pb-0 md:pb-4 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          <div className="relative bg-[#eff2f0] rounded-[24px] md:rounded-[32px] border-none md:border-[1.5px] border-white/90 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:shadow-[0_20px_50px_-12px_rgba(46,150,107,0.25),0_0_15px_rgba(255,255,255,0.6)] w-full md:w-[858px] max-w-full md:max-w-[95vw] flex-1 md:flex-none md:h-[620px] max-h-none md:max-h-[70vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Chat Floating Widget */}
+        <div className={`fixed bottom-0 right-0 md:bottom-[20px] md:right-[22px] w-full h-[100dvh] md:w-[550px] md:h-[420px] max-w-full md:max-h-[calc(100vh-48px)] z-[100] transition-all duration-500 ease-in-out origin-bottom-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+          <div className="relative bg-[#eff2f0] rounded-none md:rounded-[24px] border-none md:border-[1.5px] border-white/90 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:shadow-[0_20px_50px_-12px_rgba(46,150,107,0.25),0_0_15px_rgba(255,255,255,0.6)] w-full h-full flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
 
             {/* Header */}
-            <div className="chat-header !rounded-t-[24px] md:!rounded-t-[32px] !py-[12px] md:!py-[24px] !px-[16px] md:!px-[32px] !min-h-[70px] md:!min-h-[112px]">
+            <div className="chat-header !rounded-t-[24px] !py-[12px] !px-[16px] !min-h-[70px]">
               <div className="chat-header-content flex-1 min-w-0 mr-2 md:mr-0">
-                <div className="header-avatar-orbit scale-75 sm:scale-100 origin-left shrink-0">
+                <div className="header-avatar-orbit scale-75 origin-left shrink-0">
                   <div className="header-avatar-orb"></div>
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="header-title font-bold" style={{ fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' }}>
-                    <span className="text-[18px] md:text-[24px]">Asha</span>
+                    <span className="text-[18px]">Asha</span>
                   </span>
-                  <span className="text-[11px] md:text-[13px] font-semibold text-[#cca66a] mt-0.5 md:mt-1 leading-snug line-clamp-2 sm:line-clamp-1">{translations[language].subtitle}</span>
+                  <span className="font-medium text-[#cca66a] mt-0.5 leading-snug line-clamp-2 sm:line-clamp-1" style={{ fontSize: '8px' }}>{translations[language].subtitle}</span>
                 </div>
               </div>
               <div className="header-actions shrink-0">
                 <div className="relative group">
                   <button
-                    className="status-ready !bg-white/10 !border-white/20 !px-3 !py-1 !rounded-full text-xs flex items-center gap-1.5 hover:!bg-white/20 cursor-pointer transition-colors"
+                    className="status-ready !bg-white/10 !border-white/20 !rounded-full text-[10px] flex items-center hover:!bg-white/20 cursor-pointer transition-colors"
                     aria-label="Select language"
                   >
-                    <Globe size={14} className="text-[#cca66a]" />
+                    <Globe size={12} className="text-[#cca66a]" />
                     <span>{languageLabels[language]}</span>
-                    <ChevronDown size={12} className="opacity-70" />
+                    <ChevronDown size={10} className="opacity-70" />
                   </button>
                   <div className="absolute right-0 top-full mt-1 w-24 bg-white rounded-lg shadow-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                    <button onClick={() => setLanguage('en')} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${language === 'en' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>English</button>
-                    <button onClick={() => setLanguage('hi')} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${language === 'hi' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>हिंदी</button>
-                    <button onClick={() => setLanguage('te')} className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${language === 'te' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>తెలుగు</button>
+                    <button onClick={() => setLanguage('en')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'en' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>English</button>
+                    <button onClick={() => setLanguage('hi')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'hi' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>हिंदी</button>
+                    <button onClick={() => setLanguage('te')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'te' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>తెలుగు</button>
                   </div>
                 </div>
-                <button className="header-action-btn mobile-close-btn ml-1 hover:bg-white/20" onClick={toggleWidget} aria-label="Minimize">
-                  <ChevronDown size={20} />
+                <button className="header-action-btn ml-1 hover:bg-white/20" onClick={() => setIsOpen(false)} aria-label="Close">
+                  <X size={16} />
                 </button>
               </div>
             </div>
 
             {/* Body */}
             <div className="chat-body chat-scroll flex-1 min-h-0 bg-[#ebf0ec]" ref={chatBodyRef}>
-              <div className="chat-messages pt-[4px] px-[16px] md:px-[30px]">
+              <div className="chat-messages pt-[4px] px-[16px]">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'justify-end' : ''}`}>
                     {msg.role === 'bot' && (
@@ -938,9 +938,9 @@ function App() {
                         A
                       </div>
                     )}
-                    <div className={`message-content max-w-[92%] md:max-w-[85%] ${msg.role === 'user' ? 'items-end' : ''}`}>
+                    <div className={`message-content max-w-[92%] ${msg.role === 'user' ? 'items-end' : ''}`}>
                       {msg.content && (
-                        <div className={`message-bubble shadow-sm border border-black/5 text-[#2d3748] ${msg.role === 'user' ? '!bg-[#124d3c] !text-white !rounded-tl-[18px] !rounded-tr-[18px] !rounded-bl-[18px] !rounded-br-[4px]' : '!bg-white'}`}>
+                        <div className={`message-bubble shadow-sm border border-black/5 text-[#2d3748] ${msg.role === 'user' ? '!bg-[#124d3c] !text-white !rounded-tl-[18px] !rounded-tr-[12px] !rounded-bl-[16px] !rounded-br-[2px]' : '!bg-white'}`}>
                           {msg.content}
                         </div>
                       )}
@@ -975,75 +975,64 @@ function App() {
               </div>
 
               {/* Recommended Categories Flow Area */}
-              <div className="suggestion-pills-container w-full shrink-0 px-[16px] md:px-[30px] pt-4 pb-[16px] flex justify-center mt-2">
-
-                {/* Mobile Drawer-style Container */}
-                <div className="md:hidden w-full max-w-[400px] mx-auto bg-gradient-to-b from-[#e3ece7]/95 to-[#d6e2dc]/95 backdrop-blur-md rounded-2xl p-3 pt-2.5 shadow-sm border border-white/50 relative z-10">
-                  <div className="w-10 h-1.5 bg-[#b5c7bd] rounded-full mx-auto mb-3.5"></div>
-                  <div className="flex flex-col gap-2.5">
-                    {currentPills.map((pillText, index) => (
-                      <button
-                        key={index}
-                        className="w-full flex items-center gap-3 bg-gradient-to-b from-white/95 to-white/60 border border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-[#113227] text-[13px] font-semibold px-4 py-2.5 rounded-full transition-colors active:scale-[0.98]"
-                        onClick={() => handleSend(pillText, true)}
-                      >
-                        <span className="flex items-center justify-center w-6 opacity-90">{getPillIcon(pillText)}</span>
-                        <span className="truncate">{pillText}</span>
-                      </button>
-                    ))}
+              {currentPills.length > 0 && (
+                <div className="suggestion-pills-container w-full shrink-0 px-[16px] md:px-[30px] pt-4 pb-[16px] flex justify-center mt-2">
+                  {/* Drawer-style Container */}
+                  <div className="w-full max-w-[400px] mx-auto bg-gradient-to-b from-[#e3ece7]/95 to-[#d6e2dc]/95 backdrop-blur-md rounded-2xl p-3 pt-2.5 shadow-sm border border-white/50 relative z-10">
+                    <div className="w-10 h-1.5 bg-[#b5c7bd] rounded-full mx-auto mb-3.5"></div>
+                    <div className="flex flex-col gap-2.5">
+                      {currentPills.map((pillText, index) => (
+                        <button
+                          key={index}
+                          className="w-full flex items-center gap-3 bg-gradient-to-b from-white/95 to-white/60 border border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-[#113227] text-[13px] font-semibold px-4 py-2.5 rounded-full transition-colors active:scale-[0.98]"
+                          onClick={() => handleSend(pillText, true)}
+                        >
+                          <span className="flex items-center justify-center w-6 opacity-90">{getPillIcon(pillText)}</span>
+                          <span className="truncate">{pillText}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-
-                {/* Desktop Vertical Box Container */}
-                <div className="hidden md:flex flex-col gap-2 w-full max-w-[80%] mx-auto">
-                  {currentPills.map((pillText, index) => (
-                    <button
-                      key={index}
-                      className="group flex items-center p-3.5 bg-white border border-[#e2e8e4] rounded-[12px] shadow-sm hover:shadow-md hover:border-[#4a866d] hover:bg-[#f8fbf9] transition-all text-left"
-                      onClick={() => handleSend(pillText, true)}
-                    >
-                      <div className="w-8 h-8 rounded-full bg-[#f0f4f2] text-[#4a866d] flex items-center justify-center shrink-0 mr-3 group-hover:bg-[#4a866d] group-hover:text-white transition-colors">
-                        {getPillIcon(pillText)}
-                      </div>
-                      <span className="text-[#2d3748] text-[14.5px] font-medium leading-snug">{pillText}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              )}
 
               <div ref={messagesEndRef} />
             </div>
 
             {/* Footer */}
             <div className="chat-footer bg-white border-t border-gray-100 flex-shrink-0">
-              <div className="flex justify-end items-center px-[16px] md:px-[20px] pt-1 md:pt-0 pb-1 md:pb-0">
-                <span className="text-[12px] md:text-[13.5px] text-[#697a72] mr-3 font-medium">Asha's voice</span>
-                <label className="voice-switch relative inline-block w-[40px] md:w-[44px] h-[22px] md:h-[24px]">
+              {/* 
+              <div className="flex justify-end items-center px-[16px] pt-1 pb-1">
+                <span className="text-[12px] text-[#697a72] mr-3 font-medium">Asha's voice</span>
+                <label className="voice-switch relative inline-block w-[40px] h-[22px]">
                   <input type="checkbox" className="opacity-0 w-0 h-0" checked={isVoiceEnabled} onChange={toggleVoice} />
                   <span className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors ${isVoiceEnabled ? 'bg-[#043b2d]' : 'bg-[#e2e8e4]'}`}></span>
-                  <span className={`absolute h-[18px] md:h-[20px] w-[18px] md:w-[20px] left-[2px] bottom-[2px] bg-white rounded-full transition-transform shadow-sm ${isVoiceEnabled ? 'translate-x-[18px] md:translate-x-[20px]' : ''}`}></span>
+                  <span className={`absolute h-[18px] w-[18px] left-[2px] bottom-[2px] bg-white rounded-full transition-transform shadow-sm ${isVoiceEnabled ? 'translate-x-[18px]' : ''}`}></span>
                 </label>
               </div>
-              <div className="flex items-center gap-2 md:gap-3 px-[10px] md:px-[14px] pt-0 pb-2 md:pb-3">
-                <div className="flex-1 bg-[#e6ebe7] rounded-full px-3 md:px-4 py-2 md:py-2.5 flex items-center border border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white transition-colors shadow-sm">
+              */}
+              <div className="flex items-center gap-2 px-[10px] pt-0 pb-2">
+                <div className="flex-1 bg-[#e6ebe7] rounded-full px-3 py-1.5 flex items-center border border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white transition-colors shadow-sm">
                   <input
                     type="text"
-                    className="w-full bg-transparent border-none outline-none text-[14px] md:text-[15px] text-gray-800 placeholder-gray-500"
+                    className="w-full bg-transparent border-none outline-none text-[12px] text-gray-800 placeholder-gray-500"
                     placeholder=""
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && inputValue.trim() && handleSend(inputValue, false)}
                   />
                 </div>
+                {/*
                 <button className="w-[44px] h-[44px] rounded-full bg-[#cca66a] text-white flex items-center justify-center hover:bg-[#b5925a] transition-colors shrink-0 shadow-sm" aria-label="Use microphone">
                   <Mic size={22} />
                 </button>
+                */}
                 <button
-                  className="w-[44px] h-[44px] rounded-full bg-[#043b2d] text-white flex items-center justify-center hover:bg-[#032e23] transition-colors shrink-0 shadow-sm"
+                  className="w-[34px] h-[34px] rounded-full bg-[#043b2d] text-white flex items-center justify-center hover:bg-[#032e23] transition-colors shrink-0 shadow-sm"
                   aria-label="Send message"
                   onClick={() => inputValue.trim() && handleSend(inputValue, false)}
                 >
-                  <Send size={22} className="ml-0.5" />
+                  <Send size={16} className="ml-0.5" />
                 </button>
               </div>
             </div>
@@ -1051,12 +1040,8 @@ function App() {
           </div>
         </div>
 
-
-
-      </main>
-
       {/* Floating Action Buttons */}
-      <div className={`fixed bottom-4 md:bottom-8 right-4 md:right-8 flex-col gap-3 md:gap-4 z-50 ${isOpen ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`fixed bottom-4 md:bottom-8 right-4 md:right-8 flex-col gap-3 md:gap-4 z-50 ${isOpen ? 'hidden' : 'flex'}`}>
         <button
           className="w-[52px] h-[52px] rounded-full shadow-[0_4px_15px_rgba(0,0,0,0.15)] border-2 border-[#fcfaf5] bg-gradient-to-br from-[#f6e8cc] to-[#d1b886] flex items-center justify-center hover:scale-105 transition-transform"
           onClick={() => setIsOpen(true)}
