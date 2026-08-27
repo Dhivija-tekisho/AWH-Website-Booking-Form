@@ -308,6 +308,40 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
   );
 }
 
+function SelectionOptionCard({ when, onClick }: { when?: string, onClick?: () => void }) {
+  let datePart = when || '';
+  let timePart = '';
+  
+  if (when) {
+    const parts = when.split(',');
+    if (parts.length >= 3) {
+      timePart = parts.pop()?.trim() || '';
+      datePart = parts.join(',').trim();
+    }
+  }
+
+  return (
+    <div 
+      onClick={onClick}
+      className="bg-white border border-[#1da851] rounded-full p-2 my-1.5 shadow-sm flex items-center gap-3 w-max cursor-pointer hover:shadow-md hover:bg-[#f8fbf9] transition-all pr-5"
+    >
+      <div className="flex-shrink-0 bg-[#e6f4ea] rounded-full w-9 h-9 flex items-center justify-center ml-0.5">
+        <Calendar size={18} className="text-[#1da851]" />
+      </div>
+      <div className="w-[1.5px] h-5 bg-gray-200 mx-0.5"></div>
+      <div className="flex items-center">
+        <span className="font-bold text-[#113227] text-[15px]">{datePart}</span>
+        {timePart && (
+          <>
+            <span className="text-[#1da851] font-bold mx-2 text-[15px]">•</span>
+            <span className="font-bold text-[#1da851] text-[15px]">{timePart}</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type Language = 'en' | 'hi' | 'te';
 
 interface Translations {
@@ -446,7 +480,9 @@ function App() {
            const text = d.text || '';
            const isRegistrationPrompt = text.toLowerCase().includes('what is your full name') || text.toLowerCase().includes('what is their full name');
            const isSlotPrompt = text.toLowerCase().includes('available slots');
+           const isAppointmentSelection = text.match(/which one would you like to (cancel|reschedule)/i);
            let actionButtons: ReactNode = undefined;
+           let customContent: ReactNode = undefined;
            
            if (isRegistrationPrompt) {
              actionButtons = <RegistrationForm onSubmit={(data) => {
@@ -454,16 +490,24 @@ function App() {
              }} />;
            }
 
-           // Extract numbered options from the text
+           // Extract numbered options from the text, optionally matching a follow-up "Treatment:" line
            let displayText = text;
-           // ONLY match numbered lists (e.g. 1. Option), do NOT match bullet points (-)
-           const allOptions = [...text.matchAll(/(?:^|\n)\s*(\d+\.)\s+([^\n]+)/g)];
+           const allOptions = [...text.matchAll(/(?:^|\n)\s*(\d+\.)\s+([^\n]+)(?:\n\s*(?:📋\s*)?Treatment:\s*([^\n]+))?/gi)];
            const options: string[] = [];
            const slotOptions: CalendarOption[] = [];
+           const appointmentOptions: { num: string, val: string, treatment?: string }[] = [];
            
            for (const match of allOptions) {
              const optionNumber = match[1].trim();
              const val = match[2].trim();
+             const treatment = match[3]?.trim();
+             
+             if (isAppointmentSelection || val.match(/(?:✅|🔄|📅)/) || val.match(/—\s*Consultation/i)) {
+               appointmentOptions.push({ num: optionNumber, val, treatment });
+               displayText = displayText.replace(match[0], '');
+               continue;
+             }
+             
              // Skip details like "**Date:** value" so they don't become pills
              if (!/^\*\*.*?\*\*:/.test(val) && !val.includes('**Date:**') && !val.includes('**Time:**')) {
                options.push(val);
@@ -499,8 +543,26 @@ function App() {
              options.push('Cancel Appointment');
            }
 
-           if (options.length > 0) {
-             if (isSlotPrompt) {
+           if (options.length > 0 || appointmentOptions.length > 0) {
+             if (appointmentOptions.length > 0) {
+               customContent = (
+                 <div className="flex flex-col gap-2 w-full mt-2">
+                   {appointmentOptions.map((opt, i) => {
+                     const timeMatch = opt.val.match(/(?:✅|🔄|📅)?\s*\*?([A-Za-z0-9,\s:]+(?:am|pm))\*?/i);
+                     
+                     const when = timeMatch ? timeMatch[1].trim() : opt.val.replace(/(?:✅|🔄|📅|—.*)/g, '').trim();
+                     
+                     return (
+                       <SelectionOptionCard 
+                         key={i}
+                         when={when}
+                         onClick={() => handleSend(opt.num, false, opt.val)}
+                       />
+                     );
+                   })}
+                 </div>
+               );
+             } else if (isSlotPrompt) {
                actionButtons = <CalendarSlotPicker options={slotOptions} onSelect={(submitText, cleanText) => {
                  handleSend(submitText, false, cleanText);
                }} />;
@@ -510,6 +572,7 @@ function App() {
              
              // Remove redundant "reply with..." instructions
              displayText = displayText.replace(/Reply with the number.*/gi, '');
+             displayText = displayText.replace(/Which one would you like to (cancel|reschedule)\?.*/gi, '');
              displayText = displayText.replace(/Please reply with a number.*/gi, '');
            }
              
@@ -517,10 +580,11 @@ function App() {
            displayText = displayText.replace(/\n{3,}/g, '\n\n').trim();
 
            // Check for booking details (either prompt, confirmation, or listing)
-           const isConfirmation = text.match(/(?:Your )?appointment is confirmed/i);
+           const isConfirmationMatch = text.match(/(?:Your )?appointment (is confirmed|has been rescheduled)/i);
+           const isConfirmation = !!isConfirmationMatch;
+           const isRescheduled = isConfirmationMatch ? isConfirmationMatch[1].toLowerCase().includes('rescheduled') : false;
            const isPrompt = text.match(/Please confirm (?:your booking|rescheduling)/i);
            const isList = text.match(/upcoming appointment|here are the details|recent appointments/i);
-           let customContent: ReactNode = undefined;
            
            if (isList && !isConfirmation && !isPrompt) {
              const listMatches = [...text.matchAll(/(?:✅|🔄|📅)\s*\*([^*]+)\*(?:\s*with (Dr\.\s+[A-Za-z\s]+))?(?:\s*\*\(for ([^)]+)\)\*)?\n\s*📋 Treatment:\s*([^\n]+)/gi)];
@@ -558,7 +622,7 @@ function App() {
              const appointmentMatch = text.match(/Appointment:\s*([^\n]+)/i) || text.match(/for a (consultation|check-up)/i);
              
              if (doctorMatch || whenMatch || oldTimeMatch || newTimeMatch) {
-               const title = isConfirmation ? "Appointment Confirmed!" : "Please confirm details:";
+               const title = isConfirmation ? (isRescheduled ? "Appointment Rescheduled!" : "Appointment Confirmed!") : "Please confirm details:";
                
                const actualDoctor = doctorMatch ? (doctorMatch[0].startsWith('Dr.') ? doctorMatch[0].trim() : doctorMatch[1].trim()) : '';
                let actualWhen = whenMatch ? whenMatch[1].trim() : (newTimeMatch ? newTimeMatch[1].trim() : '');
