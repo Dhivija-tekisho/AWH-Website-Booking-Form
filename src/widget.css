@@ -1,5 +1,49 @@
 @tailwind components;
 @tailwind utilities;
+
+.awh-widget {
+  --color-primary: #0e382c;
+  --color-primary-light: #1f5642;
+  --color-bg-chat: #eff4f1;
+  --color-bg-white: #ffffff;
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #1ebd5a;
+  --color-gold: #c8a165;
+  --color-gold-hover: #b48d53;
+  --color-text-main: #143d2f;
+  --color-text-muted: #69877b;
+  --color-text-white: #ffffff;
+  --color-border: #e4e8e5;
+  --color-page-bg: #f5f7f6;
+  
+  --shadow-sm: 0 2px 8px rgba(20, 61, 47, 0.05);
+  --shadow-md: 0 4px 12px rgba(20, 61, 47, 0.08);
+  --shadow-lg: 0 12px 32px rgba(20, 61, 47, 0.15);
+  --shadow-widget: 0 12px 48px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+}
+
+.awh-widget * {
+  box-sizing: border-box;
+}
+
+.awh-widget button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.awh-widget input {
+  font-family: inherit;
+  outline: none;
+}
 html, body, #root {
   height: 100%;
   max-height: 100vh;
