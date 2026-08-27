@@ -50,7 +50,7 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
 }
 
 function parseOptionDate(opt: string) {
-  const parts = opt.split(', ');
+  const parts = stripAvailabilityIdMarker(opt).split(', ');
   if (parts.length < 3) return null;
   const datePart = parts[1]; // "25 Aug"
   const [day, monthStr] = datePart.split(' ');
@@ -68,6 +68,21 @@ function parseOptionDate(opt: string) {
   return new Date(year, monthIdx, parseInt(day));
 }
 
+type CalendarOption = {
+  displayText: string;
+  submitText: string;
+};
+
+const AVAILABILITY_ID_MARKER_RE = /\s*\[?availabilityId\s*[:=]\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]?\s*/i;
+
+function extractAvailabilityId(opt: string): string | undefined {
+  return opt.match(AVAILABILITY_ID_MARKER_RE)?.[1];
+}
+
+function stripAvailabilityIdMarker(opt: string): string {
+  return opt.replace(AVAILABILITY_ID_MARKER_RE, '').trim();
+}
+
 function parseOptionTime(d: Date, timeStr: string): Date {
   const match = timeStr.match(/(\d+):(\d+)\s*(am|pm)/i);
   if (!match) return d;
@@ -78,25 +93,26 @@ function parseOptionTime(d: Date, timeStr: string): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hours, parseInt(m, 10), 0);
 }
 
-function CalendarSlotPicker({ options, onSelect }: { options: string[], onSelect: (time: string) => void }) {
+function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], onSelect: (submitText: string, displayText: string) => void }) {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 
-  const parsedSlots: { dateObj: Date, dateKey: string, timeStr: string, fullString: string }[] = [];
+  const parsedSlots: { dateObj: Date, dateKey: string, timeStr: string, displayText: string, submitText: string }[] = [];
   
   const now = new Date();
 
   options.forEach(opt => {
-    const d = parseOptionDate(opt);
+    const displayText = stripAvailabilityIdMarker(opt.displayText);
+    const d = parseOptionDate(displayText);
     if (d) {
-      const timeStr = opt.split(', ').slice(2).join(', ');
+      const timeStr = displayText.split(', ').slice(2).join(', ');
       const fullDateTime = parseOptionTime(d, timeStr);
       
       // Filter out slots that have already passed
       if (fullDateTime < now) return;
 
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      parsedSlots.push({ dateObj: d, dateKey, timeStr, fullString: opt });
+      parsedSlots.push({ dateObj: d, dateKey, timeStr, displayText, submitText: opt.submitText });
     }
   });
 
@@ -208,7 +224,7 @@ function CalendarSlotPicker({ options, onSelect }: { options: string[], onSelect
                 selectedDateSlots.map((slot, idx) => (
                   <button
                     key={idx}
-                    onClick={() => onSelect(slot.fullString)}
+                    onClick={() => onSelect(slot.submitText, slot.displayText)}
                     className="w-full py-2.5 px-4 text-[13.5px] font-bold text-[#043b2d] bg-white border border-gray-200 rounded-[6px] hover:border-[#cca66a] hover:text-[#cca66a] hover:shadow-[0_2px_8px_rgba(204,166,106,0.15)] transition-all text-center"
                   >
                     {slot.timeStr}
@@ -441,14 +457,22 @@ function App() {
            // Extract numbered options from the text
            let displayText = text;
            // ONLY match numbered lists (e.g. 1. Option), do NOT match bullet points (-)
-           const allOptions = [...text.matchAll(/(?:^|\n)\s*(?:\d+\.)\s+([^\n]+)/g)];
+           const allOptions = [...text.matchAll(/(?:^|\n)\s*(\d+\.)\s+([^\n]+)/g)];
            const options: string[] = [];
+           const slotOptions: CalendarOption[] = [];
            
            for (const match of allOptions) {
-             const val = match[1].trim();
+             const optionNumber = match[1].trim();
+             const val = match[2].trim();
              // Skip details like "**Date:** value" so they don't become pills
              if (!/^\*\*.*?\*\*:/.test(val) && !val.includes('**Date:**') && !val.includes('**Time:**')) {
                options.push(val);
+               const availabilityId = extractAvailabilityId(val);
+               const cleanVal = stripAvailabilityIdMarker(val);
+               slotOptions.push({
+                 displayText: cleanVal,
+                 submitText: `${optionNumber} ${cleanVal}${availabilityId ? ` availabilityId:${availabilityId}` : ''}`,
+               });
                // Remove only the matched pill line
                displayText = displayText.replace(match[0], '');
              }
@@ -477,8 +501,8 @@ function App() {
 
            if (options.length > 0) {
              if (isSlotPrompt) {
-               actionButtons = <CalendarSlotPicker options={options} onSelect={(time) => {
-                 handleSend(time, false);
+               actionButtons = <CalendarSlotPicker options={slotOptions} onSelect={(submitText, cleanText) => {
+                 handleSend(submitText, false, cleanText);
                }} />;
              } else {
                setCurrentPills(options);
@@ -700,10 +724,10 @@ function App() {
     }
   };
 
-  const handleSend = (text: string, _isFromPill: boolean = false) => {
+  const handleSend = (text: string, _isFromPill: boolean = false, displayText?: string) => {
     if (!text.trim()) return;
 
-    addMessage('user', text);
+    addMessage('user', displayText ?? text);
     setInputValue('');
 
     callLLM(text);
