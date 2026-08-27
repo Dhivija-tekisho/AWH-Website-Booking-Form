@@ -161,12 +161,12 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-[12px] p-0 mt-3 shadow-[0_4px_12px_rgba(0,0,0,0.05)] w-full sm:w-[700px] max-w-[100%] flex flex-col sm:flex-row overflow-hidden">
+    <div className="bg-white border border-gray-200 rounded-[12px] p-0 mt-2 shadow-sm w-full max-w-[100%] flex flex-col sm:flex-row overflow-hidden">
       
       {/* Left Panel: Calendar */}
-      <div className="flex-1 p-5 border-b sm:border-b-0 sm:border-r border-gray-100">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-[17px] font-bold text-[#043b2d]">
+      <div className="flex-1 p-3 border-b sm:border-b-0 sm:border-r border-gray-100">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-[15px] font-bold text-[#043b2d]">
             {monthNames[month]} <span className="text-gray-400 font-normal">{year}</span>
           </h2>
           <div className="flex gap-2">
@@ -180,8 +180,8 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
         </div>
         
         <div className="grid grid-cols-7 gap-1 text-center mb-2">
-          {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(d => (
-            <div key={d} className="text-[11px] font-bold text-gray-400 tracking-wider py-1">{d}</div>
+          {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
+            <div key={d} className="text-[10px] font-bold text-gray-400 py-1">{d}</div>
           ))}
         </div>
         
@@ -212,7 +212,7 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
       </div>
 
       {/* Right Panel: Time Slots */}
-      <div className="w-full sm:w-[280px] p-5 bg-[#fafbfb]">
+      <div className="w-full sm:w-[150px] p-3 bg-[#fafbfb] shrink-0">
         {selectedDateStr ? (
           <>
             <h3 className="font-semibold text-gray-700 text-[14px] mb-4 pb-3 border-b border-gray-200">
@@ -225,7 +225,7 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
                   <button
                     key={idx}
                     onClick={() => onSelect(slot.submitText, slot.displayText)}
-                    className="w-full py-2.5 px-4 text-[13.5px] font-bold text-[#043b2d] bg-white border border-gray-200 rounded-[6px] hover:border-[#cca66a] hover:text-[#cca66a] hover:shadow-[0_2px_8px_rgba(204,166,106,0.15)] transition-all text-center"
+                    className="w-full py-1.5 px-2 text-[12px] font-bold text-[#043b2d] bg-white border border-gray-200 rounded-[6px] hover:border-[#cca66a] hover:text-[#cca66a] hover:shadow-sm transition-all text-center"
                   >
                     {slot.timeStr}
                   </button>
