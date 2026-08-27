@@ -15,12 +15,12 @@ export default defineConfig({
       formats: ['iife'],
     },
     rollupOptions: {
-      // Don't externalize React/ReactDOM so they are bundled into the widget
+      output: {
+        banner: 'if (typeof window !== "undefined" && !window.process) { window.process = { env: { NODE_ENV: "production" } }; }',
+      }
     },
   },
   define: {
-    'process.env.NODE_ENV': JSON.stringify('production'),
-    'process.env': JSON.stringify({}),
-    'process': JSON.stringify({ env: {} })
+    'process.env.NODE_ENV': JSON.stringify('production')
   }
 });
