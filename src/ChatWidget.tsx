@@ -4,7 +4,7 @@ import { Send, Globe, ChevronDown, ChevronLeft, ChevronRight, Upload, CheckCircl
 
 import './App.css';
 
-function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
+function RegistrationForm({ onSubmit, expectedPhone }: { onSubmit: (data: string) => void, expectedPhone?: string }) {
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -16,9 +16,31 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
     city: '',
     concern: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (formData.name.trim().length < 2) newErrors.name = "Min 2 chars required";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid format";
+    const phoneClean = formData.phone.replace(/\s/g, '');
+    if (!/^\+?[1-9]\d{6,14}$/.test(phoneClean)) {
+      newErrors.phone = "Invalid format";
+    } else if (expectedPhone && phoneClean !== expectedPhone) {
+      newErrors.phone = "Must match OTP verified number";
+    }
+    if (!formData.dob) newErrors.dob = "Required";
+    if (!formData.gender) newErrors.gender = "Required";
+    if (formData.state.trim().length < 2) newErrors.state = "Required";
+    if (formData.city.trim().length < 2) newErrors.city = "Required";
+    if (formData.concern.trim().length < 3) newErrors.concern = "Min 3 chars required";
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     const str = `Name: ${formData.name}, Email: ${formData.email}, Phone: ${formData.phone}, DOB: ${formData.dob}, Gender: ${formData.gender}, State: ${formData.state}, City: ${formData.city}, Concern: ${formData.concern}`;
     setSubmitted(true);
     onSubmit(str);
@@ -26,24 +48,58 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
 
   if (submitted) return null;
 
+  const getInputClass = (field: string) => `border ${errors[field] ? 'border-red-500' : 'border-gray-200'} rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a] w-full transition-colors`;
+  const ErrorMsg = ({ field }: { field: string }) => errors[field] ? <span className="text-red-500 text-[10.5px] block mt-1 ml-1 font-medium">{errors[field]}</span> : null;
+
   return (
-    <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-[12px] p-3 mt-2 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
-      <h3 className="font-semibold text-[#043b2d] text-[14px] mb-1 sm:col-span-2">Patient Details</h3>
-      <input required type="text" placeholder="Full Name" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-      <input required type="email" placeholder="Email Address" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-      <input required type="tel" placeholder="Phone Number (e.g. +1234567890)" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
-      <input required type="date" placeholder="Date of Birth" className="border border-gray-200 rounded-[6px] p-2 text-[12px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+    <form noValidate onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-[12px] p-3 mt-2 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-3 w-full">
+      <h3 className="font-semibold text-[#043b2d] text-[14px] mb-0 sm:col-span-2">Patient Details</h3>
       
-      <select required className="border border-gray-200 rounded-[6px] p-2 text-[12px] text-gray-700 outline-none focus:border-[#cca66a]" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
-        <option value="" disabled>Gender</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-        <option value="other">Other</option>
-      </select>
-      <input required type="text" placeholder="State (e.g. Telangana)" className="border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
-      <input required type="text" placeholder="City" className="sm:col-span-2 border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
+      <div>
+        <input type="text" placeholder="Full Name" className={getInputClass('name')} value={formData.name} onChange={e => { setFormData({ ...formData, name: e.target.value }); setErrors({...errors, name: ''}); }} />
+        <ErrorMsg field="name" />
+      </div>
+
+      <div>
+        <input type="email" placeholder="Email Address" className={getInputClass('email')} value={formData.email} onChange={e => { setFormData({ ...formData, email: e.target.value }); setErrors({...errors, email: ''}); }} />
+        <ErrorMsg field="email" />
+      </div>
+
+      <div>
+        <input type="tel" placeholder="Phone Number" className={getInputClass('phone')} value={formData.phone} onChange={e => { setFormData({ ...formData, phone: e.target.value }); setErrors({...errors, phone: ''}); }} />
+        <ErrorMsg field="phone" />
+      </div>
+
+      <div>
+        <input type="date" placeholder="Date of Birth" className={`${getInputClass('dob')} text-gray-700`} value={formData.dob} onChange={e => { setFormData({ ...formData, dob: e.target.value }); setErrors({...errors, dob: ''}); }} />
+        <ErrorMsg field="dob" />
+      </div>
       
-      <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="sm:col-span-2 border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
+      <div>
+        <select className={`${getInputClass('gender')} text-gray-700`} value={formData.gender} onChange={e => { setFormData({ ...formData, gender: e.target.value }); setErrors({...errors, gender: ''}); }}>
+          <option value="" disabled>Gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+        <ErrorMsg field="gender" />
+      </div>
+
+      <div>
+        <input type="text" placeholder="State (e.g. Telangana)" className={getInputClass('state')} value={formData.state} onChange={e => { setFormData({ ...formData, state: e.target.value }); setErrors({...errors, state: ''}); }} />
+        <ErrorMsg field="state" />
+      </div>
+
+      <div className="sm:col-span-2">
+        <input type="text" placeholder="City" className={getInputClass('city')} value={formData.city} onChange={e => { setFormData({ ...formData, city: e.target.value }); setErrors({...errors, city: ''}); }} />
+        <ErrorMsg field="city" />
+      </div>
+
+      <div className="sm:col-span-2">
+        <textarea placeholder="Main health concern (e.g., wound on my leg)" className={`${getInputClass('concern')} resize-none`} rows={2} value={formData.concern} onChange={e => { setFormData({ ...formData, concern: e.target.value }); setErrors({...errors, concern: ''}); }} />
+        <ErrorMsg field="concern" />
+      </div>
+
       <button type="submit" className="sm:col-span-2 btn-submit text-white py-2 rounded-[6px] text-[13px] font-bold transition-colors mt-1">Submit Details</button>
     </form>
   );
@@ -56,13 +112,13 @@ function parseOptionDate(opt: string) {
   const [day, monthStr] = datePart.split(' ');
   // Handle both "Sep" and "Sept"
   const cleanMonthStr = monthStr === 'Sept' ? 'Sep' : monthStr;
-  const monthIdx = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(cleanMonthStr);
-  
+  const monthIdx = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(cleanMonthStr);
+
   if (monthIdx === -1) return null;
 
   const now = new Date();
   let year = now.getFullYear();
-  if (monthIdx < now.getMonth() - 1) { 
+  if (monthIdx < now.getMonth() - 1) {
     year++;
   }
   return new Date(year, monthIdx, parseInt(day));
@@ -102,10 +158,10 @@ const PACKAGES = [
 function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], onSelect: (submitText: string, displayText: string) => void }) {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{submitText: string, displayText: string, timeStr: string, dateDisplay: string} | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ submitText: string, displayText: string, timeStr: string, dateDisplay: string } | null>(null);
 
   const parsedSlots: { dateObj: Date, dateKey: string, timeStr: string, displayText: string, submitText: string }[] = [];
-  
+
   const now = new Date();
 
   options.forEach(opt => {
@@ -114,9 +170,6 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
     if (d) {
       const timeStr = displayText.split(', ').slice(2).join(', ');
       const fullDateTime = parseOptionTime(d, timeStr);
-      
-      // Filter out slots that have already passed
-      if (fullDateTime < now) return;
 
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       parsedSlots.push({ dateObj: d, dateKey, timeStr, displayText, submitText: opt.submitText });
@@ -139,11 +192,11 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
-  
+
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const startDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  
+
   const days = [];
   for (let i = 0; i < startDay; i++) {
     days.push(null);
@@ -155,15 +208,15 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
   const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1));
 
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   const selectedDateSlots = selectedDateStr ? (slotsByDate[selectedDateStr] || []) : [];
-  
+
   let selectedDateDisplay = '';
   if (selectedDateStr) {
     const [y, m, d] = selectedDateStr.split('-');
-    const dObj = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
-    const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const dObj = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     selectedDateDisplay = `${weekdays[dObj.getDay()]}, ${dObj.getDate()} ${monthNames[dObj.getMonth()]}`;
   }
 
@@ -175,16 +228,16 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Selected Slot</span>
             <span className="font-bold leading-snug text-[#043b2d]">{selectedTimeSlot.dateDisplay} at {selectedTimeSlot.timeStr}</span>
           </div>
-          <button 
+          <button
             onClick={() => setSelectedTimeSlot(null)}
             className="text-[12px] font-medium text-[#cca66a] hover:text-[#b5925a] underline"
           >
             Change
           </button>
         </div>
-        
+
         <h3 className="font-bold text-[14px] text-gray-800 mt-1">Select a Package</h3>
-        
+
         <div className="flex flex-col gap-2 mt-1">
           {PACKAGES.map(pkg => (
             <button
@@ -210,7 +263,7 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
 
   return (
     <div className="bg-white border border-gray-200 rounded-[12px] p-0 mt-2 shadow-sm w-full max-w-[100%] flex flex-col sm:flex-row overflow-hidden">
-      
+
       {/* Left Panel: Calendar */}
       <div className="flex-1 p-3 border-b sm:border-b-0 sm:border-r border-gray-100">
         <div className="flex justify-between items-center mb-3">
@@ -226,21 +279,21 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
             </button>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1 text-center mb-2">
           {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(d => (
             <div key={d} className="text-[10px] font-bold text-gray-400 py-1">{d}</div>
           ))}
         </div>
-        
+
         <div className="grid grid-cols-7 gap-1 text-center">
           {days.map((day, idx) => {
             if (!day) return <div key={`empty-${idx}`} className="p-2"></div>;
-            
+
             const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const hasSlots = !!slotsByDate[dateKey];
             const isSelected = selectedDateStr === dateKey;
-            
+
             return (
               <button
                 key={idx}
@@ -266,14 +319,14 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
             <h3 className="font-semibold text-gray-700 text-[14px] mb-4 pb-3 border-b border-gray-200">
               {selectedDateDisplay}
             </h3>
-            
+
             <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar" style={{ scrollbarWidth: 'thin' }}>
               {selectedDateSlots.length > 0 ? (
                 selectedDateSlots.map((slot, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedTimeSlot({
-                      submitText: slot.submitText, 
+                      submitText: slot.submitText,
                       displayText: slot.displayText,
                       timeStr: slot.timeStr,
                       dateDisplay: selectedDateDisplay
@@ -291,9 +344,9 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
             </div>
           </>
         ) : (
-           <div className="text-[13px] text-gray-400 text-center py-10 h-full flex items-center justify-center">
-             Select a date to view times
-           </div>
+          <div className="text-[13px] text-gray-400 text-center py-10 h-full flex items-center justify-center">
+            Select a date to view times
+          </div>
         )}
       </div>
 
@@ -308,7 +361,7 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
         {isSuccess ? <CheckCircle2 size={22} className="text-[#1da851]" /> : <Calendar size={22} className="text-[#cca66a]" />}
         <h3 className="font-bold text-[15px]">{title}</h3>
       </div>
-      
+
       <div className="flex flex-col gap-3.5 text-[13.5px] text-gray-700 bg-gray-50/50 p-3 rounded-[12px] border border-gray-100">
         {referenceId && (
           <div className="flex flex-col mb-1">
@@ -316,7 +369,7 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
             <span className="font-mono text-xs text-gray-600 bg-white px-2 py-1 rounded border border-gray-200 w-fit">{referenceId}</span>
           </div>
         )}
-        
+
         {packageName && (
           <div className="flex items-start gap-3">
             <Activity size={16} className="text-[#cca66a] shrink-0 mt-0.5" />
@@ -326,7 +379,7 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
             </div>
           </div>
         )}
-        
+
         {doctor && (
           <div className="flex items-start gap-3">
             <User size={16} className="text-[#cca66a] shrink-0 mt-0.5" />
@@ -336,7 +389,7 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
             </div>
           </div>
         )}
-        
+
         {oldTime && (
           <div className="flex items-start gap-3 opacity-60">
             <Calendar size={16} className="text-gray-400 shrink-0 mt-0.5 line-through" />
@@ -346,7 +399,7 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
             </div>
           </div>
         )}
-        
+
         {when && (
           <div className="flex items-start gap-3">
             <Calendar size={16} className={isSuccess ? "text-[#1da851] shrink-0 mt-0.5" : "text-[#cca66a] shrink-0 mt-0.5"} />
@@ -364,7 +417,7 @@ function BookingDetailsCard({ title, isSuccess, referenceId, doctor, when, packa
 function SelectionOptionCard({ when, onClick }: { when?: string, onClick?: () => void }) {
   let datePart = when || '';
   let timePart = '';
-  
+
   if (when) {
     const parts = when.split(',');
     if (parts.length >= 3) {
@@ -374,7 +427,7 @@ function SelectionOptionCard({ when, onClick }: { when?: string, onClick?: () =>
   }
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className="bg-white border border-[#1da851] rounded-full p-2 my-1.5 shadow-sm flex items-center gap-3 w-max cursor-pointer hover:shadow-md hover:bg-[#f8fbf9] transition-all pr-5"
     >
@@ -510,6 +563,7 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
   const chatBodyRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const lastUserPhoneRef = useRef<string>('');
   const t = translations[language];
 
   const connectWebSocket = () => {
@@ -517,288 +571,291 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
     const botIdStr = botId;
     const baseUrl = apiUrl || 'http://localhost:3001';
     const wsBase = baseUrl.replace(/^http/, 'ws');
-    
+
     const url = `${wsBase}/ws/chatbot/${botIdStr}?threadId=${encodeURIComponent(threadIdRef.current)}`;
     console.log(url)
     const ws = new WebSocket(url);
-    
+
     ws.onmessage = (e) => {
       try {
         const d = JSON.parse(e.data);
         if (d.type === 'ready') {
-           setIsLoading(false);
+          setIsLoading(false);
         } else if (d.type === 'assistant_message') {
-           const text = d.text || '';
-           const isRegistrationPrompt = text.toLowerCase().includes('what is your full name') || text.toLowerCase().includes('what is their full name');
-           const isSlotPrompt = text.toLowerCase().includes('available slots');
-           const isAppointmentSelection = text.match(/which one would you like to (cancel|reschedule)/i);
-           let actionButtons: ReactNode = undefined;
-           let customContent: ReactNode = undefined;
-           
-           if (isRegistrationPrompt) {
-             actionButtons = <RegistrationForm onSubmit={(data) => {
-               handleSend(data, false);
-             }} />;
-           }
+          const text = d.text || '';
+          const isRegistrationPrompt = text.toLowerCase().includes('what is your full name') || text.toLowerCase().includes('what is their full name');
+          const isSlotPrompt = text.toLowerCase().includes('available slots');
+          const isAppointmentSelection = text.match(/which one would you like to (cancel|reschedule)/i);
+          let actionButtons: ReactNode = undefined;
+          let customContent: ReactNode = undefined;
 
-           // Extract numbered options from the text, optionally matching a follow-up "Treatment:" line
-           let displayText = text;
-           const allOptions = [...text.matchAll(/(?:^|\n)\s*(\d+\.)\s+([^\n]+)(?:\n\s*(?:📋\s*)?Treatment:\s*([^\n]+))?/gi)];
-           const options: string[] = [];
-           const slotOptions: CalendarOption[] = [];
-           const appointmentOptions: { num: string, val: string, treatment?: string }[] = [];
-           
-           for (const match of allOptions) {
-             const optionNumber = match[1].trim();
-             const val = match[2].trim();
-             const treatment = match[3]?.trim();
-             
-             if (isAppointmentSelection || val.match(/(?:✅|🔄|📅)/) || val.match(/—\s*Consultation/i)) {
-               appointmentOptions.push({ num: optionNumber, val, treatment });
-               displayText = displayText.replace(match[0], '');
-               continue;
-             }
-             
-             // Skip details like "**Date:** value" so they don't become pills
-             if (!/^\*\*.*?\*\*:/.test(val) && !val.includes('**Date:**') && !val.includes('**Time:**')) {
-               options.push(val);
-               const availabilityId = extractAvailabilityId(val);
-               const cleanVal = stripAvailabilityIdMarker(val);
-               slotOptions.push({
-                 displayText: cleanVal,
-                 submitText: `${optionNumber} ${cleanVal}${availabilityId ? ` availabilityId:${availabilityId}` : ''}`,
-               });
-               // Remove only the matched pill line
-               displayText = displayText.replace(match[0], '');
-             }
-           }
-           
-           // Check for Yes/No confirmation prompts
-           const yesNoRegex = /(?:please\s+)?reply\s+\*?yes\*?\s+.*?or\s+\*?no\*?\s+.*?(?:\.|$)/i;
-           const yesNoMatch = text.match(yesNoRegex);
-           if (yesNoMatch) {
-             options.push('Yes', 'No');
-             displayText = displayText.replace(yesNoRegex, '');
-           }
+          if (isRegistrationPrompt) {
+            actionButtons = <RegistrationForm 
+              expectedPhone={lastUserPhoneRef.current}
+              onSubmit={(data) => {
+                handleSend(data, false);
+              }} 
+            />;
+          }
 
-           // Check for Verify prompt
-           const verifyRegex = /(?:please\s+)?say\s+["'*]?verify["'*]?.*?(?:\.|$)/i;
-           const verifyMatch = text.match(verifyRegex);
-           if (verifyMatch) {
-             options.push('Verify');
-             displayText = displayText.replace(verifyRegex, '');
-           }
+          // Extract numbered options from the text, optionally matching a follow-up "Treatment:" line
+          let displayText = text;
+          const allOptions = [...text.matchAll(/(?:^|\n)\s*(\d+\.)\s+([^\n]+)(?:\n\s*(?:📋\s*)?Treatment:\s*([^\n]+))?/gi)];
+          const options: string[] = [];
+          const slotOptions: CalendarOption[] = [];
+          const appointmentOptions: { num: string, val: string, treatment?: string }[] = [];
 
-           // Check for identity verified to show quick actions
-           if (/identity has been verified/i.test(text)) {
-             options.push('Cancel Appointment');
-           }
+          for (const match of allOptions) {
+            const optionNumber = match[1].trim();
+            const val = match[2].trim();
+            const treatment = match[3]?.trim();
 
-           if (options.length > 0 || appointmentOptions.length > 0) {
-             if (appointmentOptions.length > 0) {
-               customContent = (
-                 <div className="flex flex-col gap-2 w-full mt-2">
-                   {appointmentOptions.map((opt, i) => {
-                     const timeMatch = opt.val.match(/(?:✅|🔄|📅)?\s*\*?([A-Za-z0-9,\s:]+(?:am|pm))\*?/i);
-                     
-                     const when = timeMatch ? timeMatch[1].trim() : opt.val.replace(/(?:✅|🔄|📅|—.*)/g, '').trim();
-                     
-                     return (
-                       <SelectionOptionCard 
-                         key={i}
-                         when={when}
-                          onClick={() => {
-                            const isListResponse = /here are your (?:upcoming|recent) appointments/i.test(text);
-                            if (isListResponse) {
-                              addMessage('user', opt.val);
-                              setIsLoading(true);
-                              setTimeout(() => {
-                                const localActionBtns = (
-                                  <div className="flex flex-col gap-2 w-full mt-1">
-                                    <button onClick={() => handleSend("Book Appointment", true)} className="btn-success">
-                                      Book Appointment
+            if (isAppointmentSelection || val.match(/(?:✅|🔄|📅)/) || val.match(/—\s*Consultation/i)) {
+              appointmentOptions.push({ num: optionNumber, val, treatment });
+              displayText = displayText.replace(match[0], '');
+              continue;
+            }
+
+            // Skip details like "**Date:** value" so they don't become pills
+            if (!/^\*\*.*?\*\*:/.test(val) && !val.includes('**Date:**') && !val.includes('**Time:**')) {
+              options.push(val);
+              const availabilityId = extractAvailabilityId(val);
+              const cleanVal = stripAvailabilityIdMarker(val);
+              slotOptions.push({
+                displayText: cleanVal,
+                submitText: `${optionNumber} ${cleanVal}${availabilityId ? ` availabilityId:${availabilityId}` : ''}`,
+              });
+              // Remove only the matched pill line
+              displayText = displayText.replace(match[0], '');
+            }
+          }
+
+          // Check for Yes/No confirmation prompts
+          const yesNoRegex = /(?:please\s+)?reply\s+\*?yes\*?\s+.*?or\s+\*?no\*?\s+.*?(?:\.|$)/i;
+          const yesNoMatch = text.match(yesNoRegex);
+          if (yesNoMatch) {
+            options.push('Yes', 'No');
+            displayText = displayText.replace(yesNoRegex, '');
+          }
+
+          // Check for Verify prompt
+          const verifyRegex = /(?:please\s+)?say\s+["'*]?verify["'*]?.*?(?:\.|$)/i;
+          const verifyMatch = text.match(verifyRegex);
+          if (verifyMatch) {
+            options.push('Verify');
+            displayText = displayText.replace(verifyRegex, '');
+          }
+
+          // Check for identity verified to show quick actions
+          if (/identity has been verified/i.test(text)) {
+            options.push('Cancel Appointment');
+          }
+
+          if (options.length > 0 || appointmentOptions.length > 0) {
+            if (appointmentOptions.length > 0) {
+              customContent = (
+                <div className="flex flex-col gap-2 w-full mt-2">
+                  {appointmentOptions.map((opt, i) => {
+                    const timeMatch = opt.val.match(/(?:✅|🔄|📅)?\s*\*?([A-Za-z0-9,\s:]+(?:am|pm))\*?/i);
+
+                    const when = timeMatch ? timeMatch[1].trim() : opt.val.replace(/(?:✅|🔄|📅|—.*)/g, '').trim();
+
+                    return (
+                      <SelectionOptionCard
+                        key={i}
+                        when={when}
+                        onClick={() => {
+                          const isListResponse = /here are your (?:upcoming|recent) appointments/i.test(text);
+                          if (isListResponse) {
+                            addMessage('user', opt.val);
+                            setIsLoading(true);
+                            setTimeout(() => {
+                              const localActionBtns = (
+                                <div className="flex flex-col gap-2 w-full mt-1">
+                                  <button onClick={() => handleSend("Book Appointment", true)} className="btn-success">
+                                    Book Appointment
+                                  </button>
+                                  <div className="flex gap-2 w-full">
+                                    <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-cancel">
+                                      Cancel Appointment
                                     </button>
-                                    <div className="flex gap-2 w-full">
-                                      <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-cancel">
-                                        Cancel Appointment
-                                      </button>
-                                      <button onClick={() => handleSend("Reschedule Appointment", true)} className="btn-reschedule">
-                                        Reschedule Appointment
-                                      </button>
-                                    </div>
+                                    <button onClick={() => handleSend("Reschedule Appointment", true)} className="btn-reschedule">
+                                      Reschedule Appointment
+                                    </button>
                                   </div>
-                                );
-                                addMessage('bot', <div className="whitespace-pre-wrap leading-relaxed">What would you like to do?</div>, localActionBtns);
-                                setIsLoading(false);
-                              }, 600);
-                            } else {
-                              handleSend(opt.num, false, opt.val);
-                            }
-                          }}
-                       />
-                     );
-                   })}
-                 </div>
-               );
-             } else if (isSlotPrompt) {
-               actionButtons = <CalendarSlotPicker options={slotOptions} onSelect={(submitText, cleanText) => {
-                 handleSend(submitText, false, cleanText);
-               }} />;
-             } else {
-               setCurrentPills(options);
-             }
-             
-             // Remove redundant "reply with..." instructions
-             displayText = displayText.replace(/Reply with the number.*/gi, '');
-             displayText = displayText.replace(/Which one would you like to (cancel|reschedule)\?.*/gi, '');
-             displayText = displayText.replace(/Please reply with a number.*/gi, '');
-           }
-             
-           // Clean up excess newlines
-           displayText = displayText.replace(/\n{3,}/g, '\n\n').trim();
+                                </div>
+                              );
+                              addMessage('bot', <div className="whitespace-pre-wrap leading-relaxed">What would you like to do?</div>, localActionBtns);
+                              setIsLoading(false);
+                            }, 600);
+                          } else {
+                            handleSend(opt.num, false, opt.val);
+                          }
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            } else if (isSlotPrompt) {
+              actionButtons = <CalendarSlotPicker options={slotOptions} onSelect={(submitText, cleanText) => {
+                handleSend(submitText, false, cleanText);
+              }} />;
+            } else {
+              setCurrentPills(options);
+            }
 
-           // Check for booking details (either prompt, confirmation, or listing)
-           const isConfirmationMatch = text.match(/(?:Your )?appointment (is confirmed|has been rescheduled)/i);
-           const isConfirmation = !!isConfirmationMatch;
-           const isRescheduled = isConfirmationMatch ? isConfirmationMatch[1].toLowerCase().includes('rescheduled') : false;
-           const isPrompt = text.match(/Please confirm (?:your booking|rescheduling)/i);
-           const isList = text.match(/upcoming appointment|here are the details|recent appointments/i);
-           
-           if (isList && !isConfirmation && !isPrompt) {
-             const listMatches = [...text.matchAll(/(?:✅|🔄|📅)\s*\*([^*]+)\*(?:\s*with (Dr\.\s+[A-Za-z\s]+))?(?:\s*\*\(for ([^)]+)\)\*)?\n\s*📋 Treatment:\s*([^\n]+)/gi)];
-             if (listMatches.length > 0) {
-               customContent = (
-                 <div className="flex flex-col gap-2 w-full mt-2">
-                   {listMatches.map((m, i) => (
-                     <BookingDetailsCard 
-                       key={i}
-                       title="Upcoming Appointment"
-                       isSuccess={true}
-                       when={m[1].trim()}
-                       doctor={m[2] ? m[2].trim() : ''}
-                       packageName={m[4] ? m[4].trim() : ''}
-                       // Reuse the referenceId field to show who it is for if it's a family booking
-                       referenceId={m[3] ? `For: ${m[3].trim()}` : undefined} 
-                     />
-                   ))}
-                 </div>
-               );
-               // Strip the matched list items
-               displayText = displayText.replace(/(?:✅|🔄|📅)\s*\*([^*]+)\*(?:\s*with Dr\.\s+[A-Za-z\s]+)?(?:\s*\*\(for [^)]+\)\*)?\n\s*📋 Treatment:\s*[^\n]+/gi, '');
-               // Clean up prefix
-               displayText = displayText.replace(/Here are your (upcoming|recent) appointments:/i, '');
-               displayText = displayText.replace(/\n{2,}/g, '\n').trim();
-             }
-           } else if (isConfirmation || isPrompt) {
-             const referenceMatch = text.match(/Reference ID:\s*([^\n]+)/i);
-             const doctorMatch = text.match(/Doctor:\s*([^\n]+)/i) || text.match(/Dr\.\s+([A-Za-z\s]+)/i);
-             const whenMatch = text.match(/When:\s*([^\n]+)/i) || text.match(/\*\*Date:\*\*\s*([^\n]+)/i);
-             const timeMatch = text.match(/\*\*Time:\*\*\s*([^\n]+)/i);
-             const packageMatch = text.match(/Package:\s*([^\n]+)/i);
-             const oldTimeMatch = text.match(/Old time:\s*([^\n]+)/i);
-             const newTimeMatch = text.match(/New time:\s*([^\n]+)/i);
-             const appointmentMatch = text.match(/Appointment:\s*([^\n]+)/i) || text.match(/for a (consultation|check-up)/i);
-             
-             if (doctorMatch || whenMatch || oldTimeMatch || newTimeMatch) {
-               const title = isConfirmation ? (isRescheduled ? "Appointment Rescheduled!" : "Appointment Confirmed!") : "Please confirm details:";
-               
-               const actualDoctor = doctorMatch ? (doctorMatch[0].startsWith('Dr.') ? doctorMatch[0].trim() : doctorMatch[1].trim()) : '';
-               let actualWhen = whenMatch ? whenMatch[1].trim() : (newTimeMatch ? newTimeMatch[1].trim() : '');
-               if (timeMatch && actualWhen) {
-                 actualWhen = `${actualWhen} at ${timeMatch[1].trim()}`;
-               }
-               const actualPackage = packageMatch ? packageMatch[1].trim() : (appointmentMatch ? appointmentMatch[1].trim() : '');
-               const actualOldTime = oldTimeMatch ? oldTimeMatch[1].trim() : '';
-               
-               customContent = <BookingDetailsCard 
-                 title={title}
-                 isSuccess={!!isConfirmation}
-                 referenceId={referenceMatch ? referenceMatch[1].trim() : undefined} 
-                 doctor={actualDoctor} 
-                 when={actualWhen} 
-                 packageName={actualPackage} 
-                 oldTime={actualOldTime}
-               />;
-               
-               // Strip from display text
-               displayText = displayText.replace(/(?:Your )?appointment is confirmed!/i, '');
-               displayText = displayText.replace(/Please confirm (?:your booking|rescheduling):/i, '');
-               displayText = displayText.replace(/Reference ID:.*/i, '');
-               displayText = displayText.replace(/Doctor:.*/i, '');
-               displayText = displayText.replace(/When:.*/i, '');
-               displayText = displayText.replace(/Package:.*/i, '');
-               displayText = displayText.replace(/Appointment:.*/i, '');
-               displayText = displayText.replace(/Old time:.*/i, '');
-               displayText = displayText.replace(/New time:.*/i, '');
-               displayText = displayText.replace(/(?:- )?\*\*Date:\*\*.*\n?/i, '');
-               displayText = displayText.replace(/(?:- )?\*\*Time:\*\*.*\n?/i, '');
-               
-               // Re-cleanup empty newlines left behind
-               displayText = displayText.replace(/\n{2,}/g, '\n').trim();
-             }
-           }
+            // Remove redundant "reply with..." instructions
+            displayText = displayText.replace(/Reply with the number.*/gi, '');
+            displayText = displayText.replace(/Which one would you like to (cancel|reschedule)\?.*/gi, '');
+            displayText = displayText.replace(/Please reply with a number.*/gi, '');
+          }
 
-            const isCancellation = text.match(/(?:Your )?appointment has been cancelled/i);
+          // Clean up excess newlines
+          displayText = displayText.replace(/\n{3,}/g, '\n\n').trim();
 
-            // Add action pills for completed workflows
-            if (isConfirmation) {
-              if (isRescheduled) {
-                actionButtons = (
-                  <div className="flex gap-2 w-full mt-1">
-                    <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-cancel">
-                      Cancel Appointment
-                    </button>
-                  </div>
-                );
-              } else {
-                actionButtons = (
-                  <div className="flex gap-2 w-full mt-1">
-                    <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-outline">
-                      Cancel
-                    </button>
-                    <button onClick={() => handleSend("Reschedule Appointment", true)} className="btn-reschedule">
-                      Reschedule
-                    </button>
-                  </div>
-                );
+          // Check for booking details (either prompt, confirmation, or listing)
+          const isConfirmationMatch = text.match(/(?:Your )?appointment (is confirmed|has been rescheduled)/i);
+          const isConfirmation = !!isConfirmationMatch;
+          const isRescheduled = isConfirmationMatch ? isConfirmationMatch[1].toLowerCase().includes('rescheduled') : false;
+          const isPrompt = text.match(/Please confirm (?:your booking|rescheduling)/i);
+          const isList = text.match(/upcoming appointment|here are the details|recent appointments/i);
+
+          if (isList && !isConfirmation && !isPrompt) {
+            const listMatches = [...text.matchAll(/(?:✅|🔄|📅)\s*\*([^*]+)\*(?:\s*with (Dr\.\s+[A-Za-z\s]+))?(?:\s*\*\(for ([^)]+)\)\*)?\n\s*📋 Treatment:\s*([^\n]+)/gi)];
+            if (listMatches.length > 0) {
+              customContent = (
+                <div className="flex flex-col gap-2 w-full mt-2">
+                  {listMatches.map((m, i) => (
+                    <BookingDetailsCard
+                      key={i}
+                      title="Upcoming Appointment"
+                      isSuccess={true}
+                      when={m[1].trim()}
+                      doctor={m[2] ? m[2].trim() : ''}
+                      packageName={m[4] ? m[4].trim() : ''}
+                      // Reuse the referenceId field to show who it is for if it's a family booking
+                      referenceId={m[3] ? `For: ${m[3].trim()}` : undefined}
+                    />
+                  ))}
+                </div>
+              );
+              // Strip the matched list items
+              displayText = displayText.replace(/(?:✅|🔄|📅)\s*\*([^*]+)\*(?:\s*with Dr\.\s+[A-Za-z\s]+)?(?:\s*\*\(for [^)]+\)\*)?\n\s*📋 Treatment:\s*[^\n]+/gi, '');
+              // Clean up prefix
+              displayText = displayText.replace(/Here are your (upcoming|recent) appointments:/i, '');
+              displayText = displayText.replace(/\n{2,}/g, '\n').trim();
+            }
+          } else if (isConfirmation || isPrompt) {
+            const referenceMatch = text.match(/Reference ID:\s*([^\n]+)/i);
+            const doctorMatch = text.match(/Doctor:\s*([^\n]+)/i) || text.match(/Dr\.\s+([A-Za-z\s]+)/i);
+            const whenMatch = text.match(/When:\s*([^\n]+)/i) || text.match(/\*\*Date:\*\*\s*([^\n]+)/i);
+            const timeMatch = text.match(/\*\*Time:\*\*\s*([^\n]+)/i);
+            const packageMatch = text.match(/Package:\s*([^\n]+)/i);
+            const oldTimeMatch = text.match(/Old time:\s*([^\n]+)/i);
+            const newTimeMatch = text.match(/New time:\s*([^\n]+)/i);
+            const appointmentMatch = text.match(/Appointment:\s*([^\n]+)/i) || text.match(/for a (consultation|check-up)/i);
+
+            if (doctorMatch || whenMatch || oldTimeMatch || newTimeMatch) {
+              const title = isConfirmation ? (isRescheduled ? "Appointment Rescheduled!" : "Appointment Confirmed!") : "Please confirm details:";
+
+              const actualDoctor = doctorMatch ? (doctorMatch[0].startsWith('Dr.') ? doctorMatch[0].trim() : doctorMatch[1].trim()) : '';
+              let actualWhen = whenMatch ? whenMatch[1].trim() : (newTimeMatch ? newTimeMatch[1].trim() : '');
+              if (timeMatch && actualWhen) {
+                actualWhen = `${actualWhen} at ${timeMatch[1].trim()}`;
               }
-            } else if (isCancellation) {
+              const actualPackage = packageMatch ? packageMatch[1].trim() : (appointmentMatch ? appointmentMatch[1].trim() : '');
+              const actualOldTime = oldTimeMatch ? oldTimeMatch[1].trim() : '';
+
+              customContent = <BookingDetailsCard
+                title={title}
+                isSuccess={!!isConfirmation}
+                referenceId={referenceMatch ? referenceMatch[1].trim() : undefined}
+                doctor={actualDoctor}
+                when={actualWhen}
+                packageName={actualPackage}
+                oldTime={actualOldTime}
+              />;
+
+              // Strip from display text
+              displayText = displayText.replace(/(?:Your )?appointment is confirmed!/i, '');
+              displayText = displayText.replace(/Please confirm (?:your booking|rescheduling):/i, '');
+              displayText = displayText.replace(/Reference ID:.*/i, '');
+              displayText = displayText.replace(/Doctor:.*/i, '');
+              displayText = displayText.replace(/When:.*/i, '');
+              displayText = displayText.replace(/Package:.*/i, '');
+              displayText = displayText.replace(/Appointment:.*/i, '');
+              displayText = displayText.replace(/Old time:.*/i, '');
+              displayText = displayText.replace(/New time:.*/i, '');
+              displayText = displayText.replace(/(?:- )?\*\*Date:\*\*.*\n?/i, '');
+              displayText = displayText.replace(/(?:- )?\*\*Time:\*\*.*\n?/i, '');
+
+              // Re-cleanup empty newlines left behind
+              displayText = displayText.replace(/\n{2,}/g, '\n').trim();
+            }
+          }
+
+          const isCancellation = text.match(/(?:Your )?appointment has been cancelled/i);
+
+          // Add action pills for completed workflows
+          if (isConfirmation) {
+            if (isRescheduled) {
               actionButtons = (
                 <div className="flex gap-2 w-full mt-1">
-                  <button onClick={() => handleSend("Book Appointment", true)} className="btn-success">
-                    Book Appointment
+                  <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-cancel">
+                    Cancel Appointment
+                  </button>
+                </div>
+              );
+            } else {
+              actionButtons = (
+                <div className="flex gap-2 w-full mt-1">
+                  <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-outline">
+                    Cancel
+                  </button>
+                  <button onClick={() => handleSend("Reschedule Appointment", true)} className="btn-reschedule">
+                    Reschedule
                   </button>
                 </div>
               );
             }
+          } else if (isCancellation) {
+            actionButtons = (
+              <div className="flex gap-2 w-full mt-1">
+                <button onClick={() => handleSend("Book Appointment", true)} className="btn-success">
+                  Book Appointment
+                </button>
+              </div>
+            );
+          }
 
-           if (displayText || actionButtons || customContent) {
-             const formattedText = displayText ? <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div> : null;
-             addMessage('bot', formattedText, actionButtons, customContent);
-           }
-           setIsLoading(false);
+          if (displayText || actionButtons || customContent) {
+            const formattedText = displayText ? <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div> : null;
+            addMessage('bot', formattedText, actionButtons, customContent);
+          }
+          setIsLoading(false);
         } else if (d.type === 'form_request') {
-           const prompt = d.form?.prompt || 'Please provide some information.';
-           addMessage('bot', prompt);
-           setIsLoading(false);
+          const prompt = d.form?.prompt || 'Please provide some information.';
+          addMessage('bot', prompt);
+          setIsLoading(false);
         } else if (d.type === 'error') {
-           console.error('Chat error from server:', d.content);
-           addMessage('bot', 'Something went wrong — please try again.');
-           setIsLoading(false);
+          console.error('Chat error from server:', d.content);
+          addMessage('bot', 'Something went wrong — please try again.');
+          setIsLoading(false);
         }
       } catch (err) {
         console.error('WS parse error', err);
       }
     };
-    
+
     ws.onclose = () => {
       wsRef.current = null;
     };
-    
+
     ws.onerror = () => {
       setIsLoading(false);
     };
-    
+
     wsRef.current = ws;
   };
 
@@ -899,6 +956,11 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
   const handleSend = (text: string, _isFromPill: boolean = false, displayText?: string) => {
     if (!text.trim()) return;
 
+    const cleanText = text.replace(/\s/g, '');
+    if (/^\+?[1-9]\d{6,14}$/.test(cleanText)) {
+      lastUserPhoneRef.current = cleanText;
+    }
+
     addMessage('user', displayText ?? text);
     setInputValue('');
 
@@ -922,121 +984,121 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
 
 
 
-    return (
+  return (
     <div className="awh-widget">
       {/* Chat Floating Widget */}
-        <div className={`fixed bottom-0 right-0 md:bottom-[20px] md:right-[22px] w-full h-[100dvh] md:w-[550px] md:h-[420px] max-w-full md:max-h-[calc(100vh-48px)] z-[100] transition-all duration-500 ease-in-out origin-bottom-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
-          <div className="relative bg-[#eff2f0] rounded-none md:rounded-[24px] border-none md:border-[1.5px] border-white/90 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:shadow-[0_20px_50px_-12px_rgba(46,150,107,0.25),0_0_15px_rgba(255,255,255,0.6)] w-full h-full flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className={`fixed bottom-0 right-0 md:bottom-[20px] md:right-[22px] w-full h-[100dvh] md:w-[550px] md:h-[420px] max-w-full md:max-h-[calc(100vh-48px)] z-[100] transition-all duration-500 ease-in-out origin-bottom-right ${isOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+        <div className="relative bg-[#eff2f0] rounded-none md:rounded-[24px] border-none md:border-[1.5px] border-white/90 shadow-[0_-8px_30px_rgba(0,0,0,0.06)] md:shadow-[0_20px_50px_-12px_rgba(46,150,107,0.25),0_0_15px_rgba(255,255,255,0.6)] w-full h-full flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
 
-            {/* Header */}
-            <div className="chat-header !rounded-t-[24px] !py-[12px] !px-[16px] !min-h-[70px]">
-              <div className="chat-header-content flex-1 min-w-0 mr-2 md:mr-0">
-                <div className="header-avatar-orbit scale-75 origin-left shrink-0">
-                  <div className="header-avatar-orb"></div>
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="header-title font-bold" style={{ fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' }}>
-                    <span className="text-[18px]">Asha</span>
-                  </span>
-                  <span className="font-medium text-[#cca66a] mt-0.5 leading-snug line-clamp-2 sm:line-clamp-1" style={{ fontSize: '8px' }}>{translations[language].subtitle}</span>
-                </div>
+          {/* Header */}
+          <div className="chat-header !rounded-t-[24px] !py-[12px] !px-[16px] !min-h-[70px]">
+            <div className="chat-header-content flex-1 min-w-0 mr-2 md:mr-0">
+              <div className="header-avatar-orbit scale-75 origin-left shrink-0">
+                <div className="header-avatar-orb"></div>
               </div>
-              <div className="header-actions shrink-0">
-                <div className="relative group">
-                  <button
-                    className="status-ready !bg-white/10 !border-white/20 !rounded-full text-[10px] flex items-center hover:!bg-white/20 cursor-pointer transition-colors"
-                    aria-label="Select language"
-                  >
-                    <Globe size={12} className="text-[#cca66a]" />
-                    <span>{languageLabels[language]}</span>
-                    <ChevronDown size={10} className="opacity-70" />
-                  </button>
-                  <div className="absolute right-0 top-full mt-1 w-24 bg-white rounded-lg shadow-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                    <button onClick={() => setLanguage('en')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'en' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>English</button>
-                    <button onClick={() => setLanguage('hi')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'hi' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>हिंदी</button>
-                    <button onClick={() => setLanguage('te')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'te' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>తెలుగు</button>
-                  </div>
-                </div>
-                <button className="header-action-btn ml-1 hover:bg-white/20" onClick={() => setIsOpen(false)} aria-label="Close">
-                  <X size={16} />
-                </button>
+              <div className="flex flex-col min-w-0">
+                <span className="header-title font-bold" style={{ fontFamily: 'ui-serif, Georgia, Cambria, "Times New Roman", Times, serif' }}>
+                  <span className="text-[18px]">Asha</span>
+                </span>
+                <span className="font-medium text-[#cca66a] mt-0.5 leading-snug line-clamp-2 sm:line-clamp-1" style={{ fontSize: '8px' }}>{translations[language].subtitle}</span>
               </div>
             </div>
-
-            {/* Body */}
-            <div className="chat-body chat-scroll flex-1 min-h-0 bg-[#ebf0ec]" ref={chatBodyRef}>
-              <div className="chat-messages pt-[4px] px-[16px]">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                    {msg.role === 'bot' && (
-                      <div className="message-avatar shadow-sm">
-                        A
-                      </div>
-                    )}
-                    <div className={`message-content max-w-[92%] ${msg.role === 'user' ? 'items-end' : ''}`}>
-                      {msg.content && (
-                        <div className={`message-bubble shadow-sm border border-black/5 ${msg.role === 'user' ? 'user-bubble' : 'bot-bubble'}`}>
-                          {msg.content}
-                        </div>
-                      )}
-                      {msg.customContent && (
-                        <div className="mt-1">
-                          {msg.customContent}
-                        </div>
-                      )}
-                      {msg.actionButtons && (
-                        <div className="action-buttons mt-2">
-                          {msg.actionButtons}
-                        </div>
-                      )}
-                    </div>
-                    {msg.role === 'user' && (
-                      <div className="user-avatar shadow-sm user-avatar-bg rounded-full w-[34px] h-[34px] flex items-center justify-center shrink-0">
-                        <User size={18} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="message-group">
-                    <div className="message-avatar shadow-sm">A</div>
-                    <div className="message-content">
-                      <div className="message-bubble typing-indicator bot-bubble shadow-sm border border-black/5">
-                        <span>.</span><span>.</span><span>.</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+            <div className="header-actions shrink-0">
+              <div className="relative group">
+                <button
+                  className="status-ready !bg-white/10 !border-white/20 !rounded-full text-[10px] flex items-center hover:!bg-white/20 cursor-pointer transition-colors"
+                  aria-label="Select language"
+                >
+                  <Globe size={12} className="text-[#cca66a]" />
+                  <span>{languageLabels[language]}</span>
+                  <ChevronDown size={10} className="opacity-70" />
+                </button>
+                <div className="absolute right-0 top-full mt-1 w-24 bg-white rounded-lg shadow-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <button onClick={() => setLanguage('en')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'en' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>English</button>
+                  <button onClick={() => setLanguage('hi')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'hi' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>हिंदी</button>
+                  <button onClick={() => setLanguage('te')} className={`w-full text-left px-4 py-2 text-[10px] hover:bg-gray-50 ${language === 'te' ? 'font-bold text-[#043b2d]' : 'text-gray-700'}`}>తెలుగు</button>
+                </div>
               </div>
+              <button className="header-action-btn ml-1 hover:bg-white/20" onClick={() => setIsOpen(false)} aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+          </div>
 
-              {/* Recommended Categories Flow Area */}
-              {currentPills.length > 0 && (
-                <div className="suggestion-pills-container w-full shrink-0 px-[16px] md:px-[30px] pt-4 pb-[16px] flex justify-center mt-2">
-                  {/* Drawer-style Container */}
-                  <div className="w-full max-w-[400px] mx-auto bg-gradient-to-b from-[#e3ece7]/95 to-[#d6e2dc]/95 backdrop-blur-md rounded-2xl p-3 pt-2.5 shadow-sm border border-white/50 relative z-10">
-                    <div className="w-10 h-1.5 bg-[#b5c7bd] rounded-full mx-auto mb-3.5"></div>
-                    <div className="flex flex-col gap-2.5">
-                      {currentPills.map((pillText, index) => (
-                        <button
-                          key={index}
-                          className="w-full flex items-center gap-3 bg-gradient-to-b from-white/95 to-white/60 border border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-[#113227] text-[13px] font-semibold px-4 py-2.5 rounded-full transition-colors active:scale-[0.98]"
-                          onClick={() => handleSend(pillText, true)}
-                        >
-                          <span className="flex items-center justify-center w-6 opacity-90">{getPillIcon(pillText)}</span>
-                          <span className="truncate">{pillText}</span>
-                        </button>
-                      ))}
+          {/* Body */}
+          <div className="chat-body chat-scroll flex-1 min-h-0 bg-[#ebf0ec]" ref={chatBodyRef}>
+            <div className="chat-messages pt-[4px] px-[16px]">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`message-group ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                  {msg.role === 'bot' && (
+                    <div className="message-avatar shadow-sm">
+                      A
+                    </div>
+                  )}
+                  <div className={`message-content max-w-[92%] ${msg.role === 'user' ? 'items-end' : ''}`}>
+                    {msg.content && (
+                      <div className={`message-bubble shadow-sm border border-black/5 ${msg.role === 'user' ? 'user-bubble' : 'bot-bubble'}`}>
+                        {msg.content}
+                      </div>
+                    )}
+                    {msg.customContent && (
+                      <div className="mt-1">
+                        {msg.customContent}
+                      </div>
+                    )}
+                    {msg.actionButtons && (
+                      <div className="action-buttons mt-2">
+                        {msg.actionButtons}
+                      </div>
+                    )}
+                  </div>
+                  {msg.role === 'user' && (
+                    <div className="user-avatar shadow-sm user-avatar-bg rounded-full w-[34px] h-[34px] flex items-center justify-center shrink-0">
+                      <User size={18} />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {isLoading && (
+                <div className="message-group">
+                  <div className="message-avatar shadow-sm">A</div>
+                  <div className="message-content">
+                    <div className="message-bubble typing-indicator bot-bubble shadow-sm border border-black/5">
+                      <span>.</span><span>.</span><span>.</span>
                     </div>
                   </div>
                 </div>
               )}
-
-              <div ref={messagesEndRef} />
             </div>
 
-            {/* Footer */}
-            <div className="chat-footer bg-white border-t border-gray-100 flex-shrink-0">
-              {/* 
+            {/* Recommended Categories Flow Area */}
+            {currentPills.length > 0 && (
+              <div className="suggestion-pills-container w-full shrink-0 px-[16px] md:px-[30px] pt-4 pb-[16px] flex justify-center mt-2">
+                {/* Drawer-style Container */}
+                <div className="w-full max-w-[400px] mx-auto bg-gradient-to-b from-[#e3ece7]/95 to-[#d6e2dc]/95 backdrop-blur-md rounded-2xl p-3 pt-2.5 shadow-sm border border-white/50 relative z-10">
+                  <div className="w-10 h-1.5 bg-[#b5c7bd] rounded-full mx-auto mb-3.5"></div>
+                  <div className="flex flex-col gap-2.5">
+                    {currentPills.map((pillText, index) => (
+                      <button
+                        key={index}
+                        className="w-full flex items-center gap-3 bg-gradient-to-b from-white/95 to-white/60 border border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] text-[#113227] text-[13px] font-semibold px-4 py-2.5 rounded-full transition-colors active:scale-[0.98]"
+                        onClick={() => handleSend(pillText, true)}
+                      >
+                        <span className="flex items-center justify-center w-6 opacity-90">{getPillIcon(pillText)}</span>
+                        <span className="truncate">{pillText}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Footer */}
+          <div className="chat-footer bg-white border-t border-gray-100 flex-shrink-0">
+            {/* 
               <div className="flex justify-end items-center px-[16px] pt-1 pb-1">
                 <span className="text-[12px] text-[#697a72] mr-3 font-medium">Asha's voice</span>
                 <label className="voice-switch relative inline-block w-[40px] h-[22px]">
@@ -1046,37 +1108,37 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                 </label>
               </div>
               */}
-              <div className="flex items-center gap-2 px-[10px] pt-0 pb-2">
-                <div className="flex-1 bg-[#e6ebe7] rounded-full px-3 py-1.5 flex items-center border border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white transition-colors shadow-sm">
-                  <input
-                    type="text"
-                    className="w-full bg-transparent border-none outline-none text-[12px] text-gray-800 placeholder-gray-500"
-                    placeholder=""
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && inputValue.trim() && handleSend(inputValue, false)}
-                  />
-                </div>
-                {/*
+            <div className="flex items-center gap-2 px-[10px] pt-0 pb-2">
+              <div className="flex-1 bg-[#e6ebe7] rounded-full px-3 py-1.5 flex items-center border border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white transition-colors shadow-sm">
+                <input
+                  type="text"
+                  className="w-full bg-transparent border-none outline-none text-[12px] text-gray-800 placeholder-gray-500"
+                  placeholder=""
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && inputValue.trim() && handleSend(inputValue, false)}
+                />
+              </div>
+              {/*
                 <button className="w-[44px] h-[44px] rounded-full bg-[#cca66a] text-white flex items-center justify-center hover:bg-[#b5925a] transition-colors shrink-0 shadow-sm" aria-label="Use microphone">
                   <Mic size={22} />
                 </button>
                 */}
-                <button
-                  className="btn-icon btn-send shadow-sm"
-                  aria-label="Send message"
-                  onClick={() => inputValue.trim() && handleSend(inputValue, false)}
-                >
-                  <Send size={16} className="ml-0.5" />
-                </button>
-              </div>
+              <button
+                className="btn-icon btn-send shadow-sm"
+                aria-label="Send message"
+                onClick={() => inputValue.trim() && handleSend(inputValue, false)}
+              >
+                <Send size={16} className="ml-0.5" />
+              </button>
             </div>
-
           </div>
-        </div>
 
-      
-      
+        </div>
+      </div>
+
+
+
       {/* Floating Action Button (Orb) */}
       <div className={`fixed bottom-4 md:bottom-8 right-4 md:right-8 flex-col gap-3 md:gap-4 z-[999999] ${isOpen ? 'hidden' : 'flex'}`}>
         <button
@@ -1087,7 +1149,7 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
           <div className="fab-orb-inner"></div>
         </button>
       </div>
-  
+
     </div>
   );
 }
