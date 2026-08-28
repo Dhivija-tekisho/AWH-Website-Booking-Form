@@ -1,4 +1,5 @@
 import ChatWidget from './ChatWidget';
+import './widget.css';
 
 function App() {
   const botId = import.meta.env.VITE_BOT_ID || 'cc544937-b11a-4970-8bdc-78b64d062b09';
