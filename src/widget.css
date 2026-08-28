@@ -521,6 +521,115 @@ html, body, #root {
   background-color: #b5925a !important;
 }
 
+.awh-widget .btn-cancel {
+  background-color: #124d3c !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex: 1 !important;
+  text-align: center !important;
+  display: block !important;
+}
+.awh-widget .btn-cancel:hover {
+  background-color: #0e382c !important;
+}
+
+.awh-widget .btn-outline {
+  background-color: #124d3c !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex: 1 !important;
+  text-align: center !important;
+  display: block !important;
+}
+.awh-widget .btn-outline:hover {
+  background-color: #0e382c !important;
+}
+
+.awh-widget .btn-success {
+  background-color: #124d3c !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex: 1 !important;
+  text-align: center !important;
+  display: block !important;
+}
+.awh-widget .btn-success:hover {
+  background-color: #0e382c !important;
+}
+
+.awh-widget .btn-reschedule {
+  background-color: #124d3c !important;
+  color: #ffffff !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  flex: 1 !important;
+  text-align: center !important;
+  display: block !important;
+}
+.awh-widget .btn-reschedule:hover {
+  background-color: #0e382c !important;
+}
+
+.awh-widget .package-pill {
+  display: flex !important;
+  flex-direction: column !important;
+  text-align: left !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  transition: all 0.2s ease !important;
+  background-color: #ffffff !important;
+  width: 100% !important;
+  color: #043b2d !important;
+}
+.awh-widget .package-pill:hover {
+  border-color: #1da851 !important;
+  background-color: #f4fcf6 !important;
+}
+.awh-widget .package-pill-name {
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  color: #043b2d !important;
+  transition: color 0.2s ease !important;
+}
+.awh-widget .package-pill:hover .package-pill-name {
+  color: #1da851 !important;
+}
+.awh-widget .package-pill-price {
+  font-weight: 700 !important;
+  font-size: 12.5px !important;
+  color: #cca66a !important;
+}
+.awh-widget .package-pill-desc {
+  font-size: 11px !important;
+  color: #6b7280 !important;
+  line-height: 1.3 !important;
+  margin-top: 4px !important;
+}
+
 .status-ready {
   display: flex;
   align-items: center;
