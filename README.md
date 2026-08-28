@@ -7,7 +7,7 @@ This frontend now runs in two modes:
 - AI chat calls go through `/api/ai/*` and are proxied to AI orchestration.
 - Booking/patient/doctor/slot calls go through `/api/dhp/*` and are proxied to DHP core-api with a service JWT minted in the Vite server.
 
-### 1) Set frontend environment variables
+## 1) Set frontend environment variables
 
 Create or update `.env` in this project root:
 
