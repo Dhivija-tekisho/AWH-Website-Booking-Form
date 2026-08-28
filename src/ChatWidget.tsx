@@ -44,7 +44,7 @@ function RegistrationForm({ onSubmit }: { onSubmit: (data: string) => void }) {
       <input required type="text" placeholder="City" className="sm:col-span-2 border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a]" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} />
       
       <textarea required placeholder="Main health concern (e.g., wound on my leg)" className="sm:col-span-2 border border-gray-200 rounded-[6px] p-2 text-[12px] outline-none focus:border-[#cca66a] resize-none" rows={2} value={formData.concern} onChange={e => setFormData({...formData, concern: e.target.value})} />
-      <button type="submit" className="sm:col-span-2 bg-[#cca66a] text-white py-2 rounded-[6px] text-[13px] font-bold hover:bg-[#b5925a] transition-colors mt-1">Submit Details</button>
+      <button type="submit" className="sm:col-span-2 btn-submit text-white py-2 rounded-[6px] text-[13px] font-bold transition-colors mt-1">Submit Details</button>
     </form>
   );
 }
@@ -198,10 +198,10 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
                 key={idx}
                 disabled={!hasSlots}
                 onClick={() => setSelectedDateStr(dateKey)}
-                className={`w-full aspect-square flex items-center justify-center rounded-[6px] text-[14px] font-medium transition-colors
-                  ${isSelected ? 'bg-[#043b2d] text-white shadow-sm' : ''}
-                  ${!isSelected && hasSlots ? 'bg-[#f4f7f5] text-gray-800 hover:bg-[#e2e8e4]' : ''}
-                  ${!hasSlots ? 'text-gray-300 cursor-default' : ''}
+                className={`w-full aspect-square flex items-center justify-center rounded-[6px] text-[14px] font-medium transition-colors border
+                  ${isSelected ? 'calendar-selected shadow-sm border-transparent' : ''}
+                  ${!isSelected && hasSlots ? 'calendar-available border-[#dce4df] hover:border-[#a8b8b0]' : ''}
+                  ${!isSelected && !hasSlots ? 'bg-gray-50 text-gray-400 opacity-50 cursor-not-allowed border-gray-100' : ''}
                 `}
               >
                 {day}
@@ -325,7 +325,7 @@ function SelectionOptionCard({ when, onClick }: { when?: string, onClick?: () =>
       onClick={onClick}
       className="bg-white border border-[#1da851] rounded-full p-2 my-1.5 shadow-sm flex items-center gap-3 w-max cursor-pointer hover:shadow-md hover:bg-[#f8fbf9] transition-all pr-5"
     >
-      <div className="flex-shrink-0 bg-[#e6f4ea] rounded-full w-9 h-9 flex items-center justify-center ml-0.5">
+      <div className="flex-shrink-0 whatsapp-icon-bg rounded-full w-9 h-9 flex items-center justify-center ml-0.5">
         <Calendar size={18} className="text-[#1da851]" />
       </div>
       <div className="w-[1.5px] h-5 bg-gray-200 mx-0.5"></div>
@@ -726,8 +726,8 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
       content: t.welcomeMessage,
       actionButtons: (
         <div className="flex gap-2 flex-wrap">
-          <button className="btn-primary !bg-[#113227] hover:!bg-[#043b2d]" onClick={() => handleSend(t.bookAppointment, true)}>{t.bookAppointment}</button>
-          <button className="btn-whatsapp !bg-[#1da851] !hover:bg-[#158940] flex items-center justify-center gap-1.2" onClick={() => window.open('https://wa.me/1234567890', '_blank')}>
+          <button className="btn-primary" onClick={() => handleSend(t.bookAppointment, true)}>{t.bookAppointment}</button>
+          <button className="btn-whatsapp" onClick={() => window.open('https://wa.me/1234567890', '_blank')}>
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
             Chat on WhatsApp
           </button>
@@ -861,7 +861,7 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                     )}
                     <div className={`message-content max-w-[92%] ${msg.role === 'user' ? 'items-end' : ''}`}>
                       {msg.content && (
-                        <div className={`message-bubble shadow-sm border border-black/5 text-[#2d3748] ${msg.role === 'user' ? '!bg-[#124d3c] !text-white !rounded-tl-[18px] !rounded-tr-[12px] !rounded-bl-[16px] !rounded-br-[2px]' : '!bg-white'}`}>
+                        <div className={`message-bubble shadow-sm border border-black/5 ${msg.role === 'user' ? 'user-bubble' : 'bot-bubble'}`}>
                           {msg.content}
                         </div>
                       )}
@@ -877,7 +877,7 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                       )}
                     </div>
                     {msg.role === 'user' && (
-                      <div className="user-avatar shadow-sm bg-[#124d3c] rounded-full w-[34px] h-[34px] flex items-center justify-center text-white shrink-0">
+                      <div className="user-avatar shadow-sm user-avatar-bg rounded-full w-[34px] h-[34px] flex items-center justify-center shrink-0">
                         <User size={18} />
                       </div>
                     )}
@@ -887,7 +887,7 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                   <div className="message-group">
                     <div className="message-avatar shadow-sm">A</div>
                     <div className="message-content">
-                      <div className="message-bubble typing-indicator !bg-white shadow-sm border border-black/5">
+                      <div className="message-bubble typing-indicator bot-bubble shadow-sm border border-black/5">
                         <span>.</span><span>.</span><span>.</span>
                       </div>
                     </div>
@@ -927,7 +927,7 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                 <span className="text-[12px] text-[#697a72] mr-3 font-medium">Asha's voice</span>
                 <label className="voice-switch relative inline-block w-[40px] h-[22px]">
                   <input type="checkbox" className="opacity-0 w-0 h-0" checked={isVoiceEnabled} onChange={toggleVoice} />
-                  <span className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors ${isVoiceEnabled ? 'bg-[#043b2d]' : 'bg-[#e2e8e4]'}`}></span>
+                  <span className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-colors ${isVoiceEnabled ? 'toggle-on' : 'toggle-off'}`}></span>
                   <span className={`absolute h-[18px] w-[18px] left-[2px] bottom-[2px] bg-white rounded-full transition-transform shadow-sm ${isVoiceEnabled ? 'translate-x-[18px]' : ''}`}></span>
                 </label>
               </div>
