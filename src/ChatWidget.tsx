@@ -949,7 +949,7 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                 </button>
                 */}
                 <button
-                  className="w-[34px] h-[34px] rounded-full bg-[#043b2d] text-white flex items-center justify-center hover:bg-[#032e23] transition-colors shrink-0 shadow-sm"
+                  className="btn-icon btn-send shadow-sm"
                   aria-label="Send message"
                   onClick={() => inputValue.trim() && handleSend(inputValue, false)}
                 >
