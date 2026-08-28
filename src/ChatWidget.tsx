@@ -93,9 +93,16 @@ function parseOptionTime(d: Date, timeStr: string): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hours, parseInt(m, 10), 0);
 }
 
+const PACKAGES = [
+  { id: 'premium', name: 'Premium Care', price: '₹3000', desc: 'Priority support & extended time' },
+  { id: 'basic_plan', name: 'Basic Plan', price: '₹1500', desc: 'Standard care plan with regular consult' },
+  { id: 'basic_consult', name: 'Basic Consult', price: '₹500', desc: 'Simple one-time consultation session' },
+];
+
 function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], onSelect: (submitText: string, displayText: string) => void }) {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{submitText: string, displayText: string, timeStr: string, dateDisplay: string} | null>(null);
 
   const parsedSlots: { dateObj: Date, dateKey: string, timeStr: string, displayText: string, submitText: string }[] = [];
   
@@ -158,6 +165,47 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
     const dObj = new Date(parseInt(y), parseInt(m)-1, parseInt(d));
     const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     selectedDateDisplay = `${weekdays[dObj.getDay()]}, ${dObj.getDate()} ${monthNames[dObj.getMonth()]}`;
+  }
+
+  if (selectedTimeSlot) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-[12px] p-4 mt-2 shadow-sm w-full flex flex-col gap-3">
+        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
+          <div className="flex flex-col">
+            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Selected Slot</span>
+            <span className="font-bold leading-snug text-[#043b2d]">{selectedTimeSlot.dateDisplay} at {selectedTimeSlot.timeStr}</span>
+          </div>
+          <button 
+            onClick={() => setSelectedTimeSlot(null)}
+            className="text-[12px] font-medium text-[#cca66a] hover:text-[#b5925a] underline"
+          >
+            Change
+          </button>
+        </div>
+        
+        <h3 className="font-bold text-[14px] text-gray-800 mt-1">Select a Package</h3>
+        
+        <div className="flex flex-col gap-2 mt-1">
+          {PACKAGES.map(pkg => (
+            <button
+              key={pkg.id}
+              onClick={() => {
+                const submitText = `${selectedTimeSlot.submitText}\nPackage: ${pkg.name} - ${pkg.price}`;
+                const displayText = `${selectedTimeSlot.displayText}\nPackage: ${pkg.name} - ${pkg.price}`;
+                onSelect(submitText, displayText);
+              }}
+              className="package-pill group"
+            >
+              <div className="flex justify-between items-center w-full">
+                <span className="package-pill-name">{pkg.name}</span>
+                <span className="package-pill-price">{pkg.price}</span>
+              </div>
+              <span className="package-pill-desc">{pkg.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -224,7 +272,12 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
                 selectedDateSlots.map((slot, idx) => (
                   <button
                     key={idx}
-                    onClick={() => onSelect(slot.submitText, slot.displayText)}
+                    onClick={() => setSelectedTimeSlot({
+                      submitText: slot.submitText, 
+                      displayText: slot.displayText,
+                      timeStr: slot.timeStr,
+                      dateDisplay: selectedDateDisplay
+                    })}
                     className="w-full py-1.5 px-2 text-[12px] font-bold text-[#043b2d] bg-white border border-gray-200 rounded-[6px] hover:border-[#cca66a] hover:text-[#cca66a] hover:shadow-sm transition-all text-center"
                   >
                     {slot.timeStr}
@@ -554,7 +607,34 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                        <SelectionOptionCard 
                          key={i}
                          when={when}
-                         onClick={() => handleSend(opt.num, false, opt.val)}
+                          onClick={() => {
+                            const isListResponse = /here are your (?:upcoming|recent) appointments/i.test(text);
+                            if (isListResponse) {
+                              addMessage('user', opt.val);
+                              setIsLoading(true);
+                              setTimeout(() => {
+                                const localActionBtns = (
+                                  <div className="flex flex-col gap-2 w-full mt-1">
+                                    <button onClick={() => handleSend("Book Appointment", true)} className="btn-success">
+                                      Book Appointment
+                                    </button>
+                                    <div className="flex gap-2 w-full">
+                                      <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-cancel">
+                                        Cancel Appointment
+                                      </button>
+                                      <button onClick={() => handleSend("Reschedule Appointment", true)} className="btn-reschedule">
+                                        Reschedule Appointment
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                                addMessage('bot', <div className="whitespace-pre-wrap leading-relaxed">What would you like to do?</div>, localActionBtns);
+                                setIsLoading(false);
+                              }, 600);
+                            } else {
+                              handleSend(opt.num, false, opt.val);
+                            }
+                          }}
                        />
                      );
                    })}
@@ -657,6 +737,40 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
                displayText = displayText.replace(/\n{2,}/g, '\n').trim();
              }
            }
+
+            const isCancellation = text.match(/(?:Your )?appointment has been cancelled/i);
+
+            // Add action pills for completed workflows
+            if (isConfirmation) {
+              if (isRescheduled) {
+                actionButtons = (
+                  <div className="flex gap-2 w-full mt-1">
+                    <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-cancel">
+                      Cancel Appointment
+                    </button>
+                  </div>
+                );
+              } else {
+                actionButtons = (
+                  <div className="flex gap-2 w-full mt-1">
+                    <button onClick={() => handleSend("Cancel Appointment", true)} className="btn-outline">
+                      Cancel
+                    </button>
+                    <button onClick={() => handleSend("Reschedule Appointment", true)} className="btn-reschedule">
+                      Reschedule
+                    </button>
+                  </div>
+                );
+              }
+            } else if (isCancellation) {
+              actionButtons = (
+                <div className="flex gap-2 w-full mt-1">
+                  <button onClick={() => handleSend("Book Appointment", true)} className="btn-success">
+                    Book Appointment
+                  </button>
+                </div>
+              );
+            }
 
            if (displayText || actionButtons || customContent) {
              const formattedText = displayText ? <div className="whitespace-pre-wrap leading-relaxed">{displayText}</div> : null;
