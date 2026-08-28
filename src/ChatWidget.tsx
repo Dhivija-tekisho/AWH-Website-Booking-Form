@@ -171,6 +171,9 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
       const timeStr = displayText.split(', ').slice(2).join(', ');
       const fullDateTime = parseOptionTime(d, timeStr);
 
+      // Filter out slots that have already passed
+      if (fullDateTime < now) return;
+
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       parsedSlots.push({ dateObj: d, dateKey, timeStr, displayText, submitText: opt.submitText });
     }
