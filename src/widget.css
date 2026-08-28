@@ -74,10 +74,39 @@ html, body, #root {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-lg);
-  z-index: 1000;
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  animation: fabPulse 2s infinite;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(14, 74, 64, 0.3);
+  transition: all 0.2s ease;
+  z-index: 9999;
+  animation: pulse-shadow 2s infinite;
+}
+
+.fab-custom {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+  border: 2px solid #fcfaf5 !important;
+  background: linear-gradient(to bottom right, #f6e8cc, #d1b886) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s ease !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+}
+
+.fab-custom:hover {
+  transform: scale(1.05) !important;
+}
+
+.fab-orb-inner {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  box-shadow: inset -2px -2px 4px rgba(0,0,0,0.2), 0 0 6px rgba(255,255,255,0.8) !important;
+  background: radial-gradient(circle at 35% 35%, #fff 0%, #f4dca6 35%, #c8a165 70%, #4a866d 100%) !important;
 }
 
 @keyframes fabPulse {
@@ -838,11 +867,11 @@ input:checked + .voice-slider:before {
 }
 
 .btn-send {
-  background-color: var(--color-primary);
+  background-color: #043b2d !important;
 }
 
 .btn-send:hover {
-  background-color: var(--color-primary-light);
+  background-color: #032e23 !important;
 }
 
 .btn-send:disabled {
