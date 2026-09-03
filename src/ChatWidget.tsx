@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Send, Globe, ChevronDown, ChevronLeft, ChevronRight, Upload, CheckCircle2, Calendar, User, MapPin, Stethoscope, Activity, AlertCircle, Wind, X } from 'lucide-react';
+import { Send, Globe, ChevronDown, ChevronLeft, ChevronRight, Upload, CheckCircle2, Calendar, User, MapPin, Stethoscope, Activity, AlertCircle, Wind, X, Mic } from 'lucide-react';
 
 import './App.css';
 
@@ -149,16 +149,9 @@ function parseOptionTime(d: Date, timeStr: string): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), hours, parseInt(m, 10), 0);
 }
 
-const PACKAGES = [
-  { id: 'premium', name: 'Premium Care', price: '₹3000', desc: 'Priority support & extended time' },
-  { id: 'basic_plan', name: 'Basic Plan', price: '₹1500', desc: 'Standard care plan with regular consult' },
-  { id: 'basic_consult', name: 'Basic Consult', price: '₹500', desc: 'Simple one-time consultation session' },
-];
-
 function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], onSelect: (submitText: string, displayText: string) => void }) {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ submitText: string, displayText: string, timeStr: string, dateDisplay: string } | null>(null);
 
   const parsedSlots: { dateObj: Date, dateKey: string, timeStr: string, displayText: string, submitText: string }[] = [];
 
@@ -223,46 +216,6 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
     selectedDateDisplay = `${weekdays[dObj.getDay()]}, ${dObj.getDate()} ${monthNames[dObj.getMonth()]}`;
   }
 
-  if (selectedTimeSlot) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-[12px] p-4 mt-2 shadow-sm w-full flex flex-col gap-3">
-        <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-          <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">Selected Slot</span>
-            <span className="font-bold leading-snug text-[#043b2d]">{selectedTimeSlot.dateDisplay} at {selectedTimeSlot.timeStr}</span>
-          </div>
-          <button
-            onClick={() => setSelectedTimeSlot(null)}
-            className="text-[12px] font-medium text-[#cca66a] hover:text-[#b5925a] underline"
-          >
-            Change
-          </button>
-        </div>
-
-        <h3 className="font-bold text-[14px] text-gray-800 mt-1">Select a Package</h3>
-
-        <div className="flex flex-col gap-2 mt-1">
-          {PACKAGES.map(pkg => (
-            <button
-              key={pkg.id}
-              onClick={() => {
-                const submitText = `${selectedTimeSlot.submitText}\nPackage: ${pkg.name} - ${pkg.price}`;
-                const displayText = `${selectedTimeSlot.displayText}\nPackage: ${pkg.name} - ${pkg.price}`;
-                onSelect(submitText, displayText);
-              }}
-              className="package-pill group"
-            >
-              <div className="flex justify-between items-center w-full">
-                <span className="package-pill-name">{pkg.name}</span>
-                <span className="package-pill-price">{pkg.price}</span>
-              </div>
-              <span className="package-pill-desc">{pkg.desc}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-[12px] p-0 mt-2 shadow-sm w-full max-w-[100%] flex flex-col sm:flex-row overflow-hidden">
@@ -328,12 +281,7 @@ function CalendarSlotPicker({ options, onSelect }: { options: CalendarOption[], 
                 selectedDateSlots.map((slot, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setSelectedTimeSlot({
-                      submitText: slot.submitText,
-                      displayText: slot.displayText,
-                      timeStr: slot.timeStr,
-                      dateDisplay: selectedDateDisplay
-                    })}
+                    onClick={() => onSelect(slot.submitText, slot.displayText)}
                     className="w-full py-1.5 px-2 text-[12px] font-bold text-[#043b2d] bg-white border border-gray-200 rounded-[6px] hover:border-[#cca66a] hover:text-[#cca66a] hover:shadow-sm transition-all text-center"
                   >
                     {slot.timeStr}
@@ -545,6 +493,8 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
   // const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [language, setLanguage] = useState<Language>('en');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentPills, setCurrentPills] = useState<string[]>([]);
@@ -901,10 +851,6 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
       actionButtons: (
         <div className="flex gap-2 flex-wrap">
           <button className="btn-primary" onClick={() => handleSend(t.bookAppointment, true)}>{t.bookAppointment}</button>
-          <button className="btn-whatsapp" onClick={() => window.open('https://wa.me/1234567890', '_blank')}>
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-            Chat on WhatsApp
-          </button>
         </div>
       )
     }]);
@@ -921,6 +867,70 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
       setCurrentPills([]);
     }
   }, [messages.length]);
+
+  // STT Setup
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+
+        recognitionRef.current.onresult = (event: any) => {
+          let finalTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            }
+          }
+          if (finalTranscript) {
+            setInputValue((prev) => (prev ? prev + ' ' : '') + finalTranscript);
+          }
+        };
+
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+        
+        recognitionRef.current.onerror = (event: any) => {
+          console.error("Speech recognition error", event.error);
+          setIsListening(false);
+        };
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (recognitionRef.current) {
+      if (language === 'hi') {
+        recognitionRef.current.lang = 'hi-IN';
+      } else if (language === 'te') {
+        recognitionRef.current.lang = 'te-IN';
+      } else {
+        recognitionRef.current.lang = 'en-US';
+      }
+    }
+  }, [language]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error(e);
+        setIsListening(false);
+      }
+    }
+  };
 
   // const toggleVoice = () => setIsVoiceEnabled(!isVoiceEnabled);
 
@@ -1112,21 +1122,34 @@ export default function ChatWidget({ botId, apiUrl }: { botId: string; apiUrl?: 
               </div>
               */}
             <div className="flex items-center gap-2 px-[10px] pt-0 pb-2">
-              <div className="flex-1 bg-[#e6ebe7] rounded-full px-3 py-1.5 flex items-center border border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white transition-colors shadow-sm">
-                <input
-                  type="text"
-                  className="w-full bg-transparent border-none outline-none text-[12px] text-gray-800 placeholder-gray-500"
-                  placeholder=""
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && inputValue.trim() && handleSend(inputValue, false)}
-                />
+              <div className={`flex-1 rounded-full px-3 py-1.5 flex items-center border transition-all shadow-sm ${isListening ? 'bg-[#eaf2ee] border-[#0e382c]' : 'bg-[#e6ebe7] border-[#dce4df] focus-within:border-[#4a866d] focus-within:bg-white'}`}>
+                {isListening ? (
+                  <div className="w-full h-[24px] flex items-center gap-[3px] px-2">
+                     <div className="w-[3px] bg-[#0e382c] rounded-full animate-[sound-wave_1.2s_ease-in-out_infinite]" style={{ height: '4px' }}></div>
+                     <div className="w-[3px] bg-[#0e382c] rounded-full animate-[sound-wave_1.2s_ease-in-out_infinite_0.2s]" style={{ height: '4px' }}></div>
+                     <div className="w-[3px] bg-[#0e382c] rounded-full animate-[sound-wave_1.2s_ease-in-out_infinite_0.4s]" style={{ height: '4px' }}></div>
+                     <div className="w-[3px] bg-[#0e382c] rounded-full animate-[sound-wave_1.2s_ease-in-out_infinite_0.6s]" style={{ height: '4px' }}></div>
+                     <div className="w-[3px] bg-[#0e382c] rounded-full animate-[sound-wave_1.2s_ease-in-out_infinite_0.8s]" style={{ height: '4px' }}></div>
+                     <span className="ml-3 text-[12px] text-[#0e382c] font-bold animate-pulse">Listening...</span>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className="w-full bg-transparent border-none outline-none text-[12px] text-gray-800 placeholder-gray-500"
+                    placeholder="Type your message..."
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && inputValue.trim() && handleSend(inputValue, false)}
+                  />
+                )}
               </div>
-              {/*
-                <button className="w-[44px] h-[44px] rounded-full bg-[#cca66a] text-white flex items-center justify-center hover:bg-[#b5925a] transition-colors shrink-0 shadow-sm" aria-label="Use microphone">
-                  <Mic size={22} />
-                </button>
-                */}
+              <button 
+                className={`btn-icon shadow-sm btn-send ${isListening ? 'animate-pulse' : ''}`} 
+                aria-label={isListening ? "Stop listening" : "Use microphone"}
+                onClick={toggleListening}
+              >
+                <Mic size={16} />
+              </button>
               <button
                 className="btn-icon btn-send shadow-sm"
                 aria-label="Send message"

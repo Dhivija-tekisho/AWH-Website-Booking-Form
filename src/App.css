@@ -943,3 +943,8 @@ input:checked + .voice-slider:before {
 @media (max-height: 800px) {
   .hide-on-short { display: none !important; }
 }
+
+@keyframes sound-wave {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
